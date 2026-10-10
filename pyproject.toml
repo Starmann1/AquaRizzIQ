@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aquarizz"
+version = "0.1.0"
+description = "AquaRizz — Urban Flood Early Warning Decision Support System for Chennai"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "AquaRizz Team" }]
+license = { text = "Proprietary" }
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy>=2.0.35",
+    "psycopg2-binary>=2.9.10",
+    "geoalchemy2>=0.16.0",
+    "httpx>=0.28.0",
+    "shapely>=2.0.6",
+    "geopandas>=1.0.1",
+    "numpy>=2.0.0",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.6.0",
+    "lightgbm>=4.5.0",
+    "shap>=0.46.0",
+    "langgraph>=0.2.60",
+    "pyyaml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["apps/api/tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

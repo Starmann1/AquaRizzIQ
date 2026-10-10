@@ -1,0 +1,67 @@
+[
+  {
+    "id": "SIM-SWD-W112-001",
+    "name": "T. Nagar Venkatnarayana Road Drain",
+    "ward_id": "WARD-112",
+    "sensor_type": "ULTRASONIC_LEVEL",
+    "depth_m": 2.5,
+    "normal_level_m": 0.20,
+    "warning_level_m": 1.50,
+    "danger_level_m": 2.10,
+    "latitude": 13.0410,
+    "longitude": 80.2360,
+    "is_simulated": true
+  },
+  {
+    "id": "SIM-SWD-W113-001",
+    "name": "Mambalam Canal Outfall Gauge",
+    "ward_id": "WARD-113",
+    "sensor_type": "PRESSURE_TRANSDUCER",
+    "depth_m": 3.0,
+    "normal_level_m": 0.30,
+    "warning_level_m": 1.80,
+    "danger_level_m": 2.60,
+    "latitude": 13.0370,
+    "longitude": 80.2210,
+    "is_simulated": true
+  },
+  {
+    "id": "SIM-SWD-W117-001",
+    "name": "Velachery Lake Inlet SWD",
+    "ward_id": "WARD-117",
+    "sensor_type": "ULTRASONIC_LEVEL",
+    "depth_m": 2.8,
+    "normal_level_m": 0.25,
+    "warning_level_m": 1.70,
+    "danger_level_m": 2.40,
+    "latitude": 12.9830,
+    "longitude": 80.2220,
+    "is_simulated": true
+  },
+  {
+    "id": "SIM-SWD-W118-001",
+    "name": "Pallikaranai Marsh Discharge Gate",
+    "ward_id": "WARD-118",
+    "sensor_type": "RADAR_LEVEL",
+    "depth_m": 3.5,
+    "normal_level_m": 0.40,
+    "warning_level_m": 2.20,
+    "danger_level_m": 3.00,
+    "latitude": 12.9650,
+    "longitude": 80.2180,
+    "is_simulated": true
+  },
+  {
+    "id": "SIM-SWD-W142-001",
+    "name": "Adyar Estuary Tidal Gauge",
+    "ward_id": "WARD-142",
+    "sensor_type": "RADAR_LEVEL",
+    "depth_m": 4.0,
+    "normal_level_m": 0.50,
+    "warning_level_m": 2.50,
+    "danger_level_m": 3.40,
+    "latitude": 13.0070,
+    "longitude": 80.2590,
+    "is_simulated": true
+  }
+]

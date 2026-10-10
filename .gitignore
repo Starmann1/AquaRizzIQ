@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment & Secrets
+.env*
+*.env
+*.env.local
+*.env.*
+users.json
+
+# Node
+node_modules/
+apps/web/dist/
+apps/web/.vite/
+*.tsbuildinfo
+
+# Database
+*.sql.bak
+
+# ML models (large files)
+models/*.joblib
+models/*.pkl
+models/*.lgb
+!models/.gitkeep
+
+# Data (large files)
+data/raw/
+data/processed/
+data/synthetic/
+!data/fixtures/
+!data/sample/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+test-results/
+
+# Alembic
+apps/api/migrations/versions/*.pyc

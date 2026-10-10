@@ -1,0 +1,68 @@
+from enum import Enum
+
+class RiskLevel(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    VERY_HIGH = "VERY_HIGH"
+
+class DataQualityState(str, Enum):
+    VALID = "VALID"
+    SUSPECT = "SUSPECT"
+    STALE = "STALE"
+    MISSING = "MISSING"
+    CONFLICTING = "CONFLICTING"
+    OUTLIER = "OUTLIER"
+    INVALID = "INVALID"
+
+class AssessmentStatus(str, Enum):
+    DRAFT = "DRAFT"
+    PENDING_REVIEW = "PENDING_REVIEW"
+    APPROVED = "APPROVED"
+    DISPATCHED = "DISPATCHED"
+    OUTCOME_CAPTURED = "OUTCOME_CAPTURED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+    ABSTAINED = "ABSTAINED"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+    FAILED = "FAILED"
+
+class UserRole(str, Enum):
+    CITIZEN = "CITIZEN"
+    MUNICIPAL_OPERATOR = "MUNICIPAL_OPERATOR"
+    EMERGENCY_COORDINATOR = "EMERGENCY_COORDINATOR"
+    ADMINISTRATOR = "ADMINISTRATOR"
+    RESEARCHER = "RESEARCHER"
+    SYSTEM_SERVICE = "SYSTEM_SERVICE"
+
+class LLMMode(str, Enum):
+    OFF = "OFF"
+    TEMPLATE = "TEMPLATE"
+    LLM = "LLM"
+
+class ModelReadiness(str, Enum):
+    EXPERIMENTAL = "EXPERIMENTAL"
+    PROTOTYPE = "PROTOTYPE"
+    OPERATIONAL = "OPERATIONAL"
+
+class ValidationDomain(str, Enum):
+    SYNTHETIC = "SYNTHETIC"
+    OBSERVED = "OBSERVED"
+    MIXED = "MIXED"
+
+class PolicyStatus(str, Enum):
+    DRAFT = "DRAFT"
+    PROTOTYPE_ONLY = "PROTOTYPE_ONLY"
+    APPROVED = "APPROVED"
+
+class DataSource(str, Enum):
+    AWS_IOT = "AWS_IOT"
+    IMD = "IMD"
+    MANUAL = "MANUAL"
+    SIMULATION = "SIMULATION"
+
+class SensorStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    STALE = "STALE"
+    OFFLINE = "OFFLINE"
+    FAULTY = "FAULTY"

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "SH-W112-01",
+    "name": "T. Nagar Community Hall Relief Centre",
+    "ward_id": "WARD-112",
+    "capacity": 500,
+    "current_occupancy": 0,
+    "elevation_m": 8.5,
+    "flood_safety_score": 0.88,
+    "latitude": 13.0440,
+    "longitude": 80.2390,
+    "has_power_backup": true,
+    "has_medical_aid": true
+  },
+  {
+    "id": "SH-W113-01",
+    "name": "Mambalam Higher Secondary School Relief Camp",
+    "ward_id": "WARD-113",
+    "capacity": 450,
+    "current_occupancy": 0,
+    "elevation_m": 8.1,
+    "flood_safety_score": 0.85,
+    "latitude": 13.0410,
+    "longitude": 80.2190,
+    "has_power_backup": true,
+    "has_medical_aid": true
+  },
+  {
+    "id": "SH-W117-01",
+    "name": "Guru Nanak College Indoor Stadium Shelter",
+    "ward_id": "WARD-117",
+    "capacity": 1200,
+    "current_occupancy": 0,
+    "elevation_m": 7.8,
+    "flood_safety_score": 0.82,
+    "latitude": 12.9910,
+    "longitude": 80.2190,
+    "has_power_backup": true,
+    "has_medical_aid": true
+  },
+  {
+    "id": "SH-W142-01",
+    "name": "Adyar Corporation Community Centre",
+    "ward_id": "WARD-142",
+    "capacity": 350,
+    "current_occupancy": 0,
+    "elevation_m": 7.2,
+    "flood_safety_score": 0.90,
+    "latitude": 13.0120,
+    "longitude": 80.2520,
+    "has_power_backup": true,
+    "has_medical_aid": true
+  }
+]

@@ -1,0 +1,38 @@
+# AquaRizz Policy & Alert Governance Configuration
+meta:
+  config_version: "1.0.0"
+  policy_status: "PROTOTYPE_ONLY"
+
+approval_rules:
+  LOW:
+    requires_human_review: false
+    auto_publish: false
+    allowed_action: "MONITOR"
+  MEDIUM:
+    requires_human_review: true
+    minimum_role: "MUNICIPAL_OPERATOR"
+    max_assessment_age_minutes: 30
+    approval_validity_minutes: 60
+    allowed_action: "ADVISORY"
+  HIGH:
+    requires_human_review: true
+    minimum_role: "EMERGENCY_COORDINATOR"
+    max_assessment_age_minutes: 30
+    approval_validity_minutes: 45
+    allowed_action: "WARNING"
+  VERY_HIGH:
+    requires_human_review: true
+    minimum_role: "EMERGENCY_COORDINATOR"
+    max_assessment_age_minutes: 20
+    approval_validity_minutes: 30
+    allowed_action: "EVACUATION_RECOMMENDATION"
+
+checklist_requirements:
+  - id: "chk_evidence"
+    label: "Telemetry evidence and sensor quality flags reviewed"
+  - id: "chk_risk"
+    label: "Hazard probability and impact classification verified"
+  - id: "chk_actions"
+    label: "Proposed citizen action recommendations validated"
+  - id: "chk_uncertainty"
+    label: "Prediction interval and confidence metrics acknowledged"

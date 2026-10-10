@@ -1,0 +1,69 @@
+# AquaRizz Risk Engine Configuration (PROTOTYPE_ONLY)
+# Version: 1.0.0
+# Description: Configuration for hazard logistic sigmoid, exposure/vulnerability factor weights, and safety floors.
+
+meta:
+  config_version: "1.0.0"
+  policy_status: "PROTOTYPE_ONLY"
+  last_updated: "2026-10-10T22:00:00Z"
+
+hazard:
+  b0: -3.5
+  b: 0.0
+  temperature: 1.0
+  cuts:
+    low: 0.10
+    medium: 0.40
+    high: 0.70
+  features:
+    rainfall_1h:
+      weight: 1.6
+      lo: 0.0
+      hi: 75.0
+    rainfall_3h:
+      weight: 1.2
+      lo: 0.0
+      hi: 150.0
+    water_level_m:
+      weight: 2.2
+      lo: 0.0
+      hi: 2.5
+    rate_of_rise:
+      weight: 1.4
+      lo: 0.0
+      hi: 1.0
+    static_susceptibility:
+      weight: 1.0
+      lo: 0.0
+      hi: 1.0
+
+exposure:
+  weights:
+    population_at_risk: 0.40
+    buildings_at_risk: 0.15
+    roads_at_risk_km: 0.15
+    critical_facilities: 0.30
+
+vulnerability:
+  weights:
+    sensitive_population_share: 0.40
+    shelter_distance_gap: 0.25
+    egress_restriction: 0.20
+    housing_density: 0.15
+
+impact:
+  exposure_weight: 0.60
+  vulnerability_weight: 0.40
+
+safety_floors:
+  f1_sensor_fill_threshold: 0.85
+  f1_target_floor: "HIGH"
+  f2_sensor_fill_threshold: 0.60
+  f2_rate_of_rise_threshold: 0.5
+  f2_target_floor: "MEDIUM"
+  f3_rainfall_intensity_threshold: 100.0
+  f3_target_floor: "MEDIUM"
+
+confidence:
+  min_acceptable: 0.20
+  abstain_on_low_confidence: true

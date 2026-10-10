@@ -1,0 +1,21 @@
+# AquaRizz Evacuation Routing Configuration
+meta:
+  config_version: "1.0.0"
+
+cost_parameters:
+  base_speed_kmh: 40.0
+  walking_speed_kmh: 4.5
+  flood_penalty_multiplier: 4.0
+  road_block_risk_threshold: 0.90
+  underpass_penalty_s: 300.0
+
+safe_route_score:
+  weight_travel_time: 0.35
+  weight_path_risk: 0.45
+  weight_shelter_safety: 0.20
+  eta_saturation_minutes: 30.0
+
+alternatives:
+  k_paths: 3
+  edge_penalty_factor: 1.5
+  max_overlap_ratio: 0.70

@@ -1,0 +1,46 @@
+# AquaRizz Sensor Network & Quality Calibration Configuration
+meta:
+  config_version: "1.0.0"
+
+quality_thresholds:
+  freshness_window_minutes: 15
+  stale_threshold_minutes: 30
+  max_water_level_m: 5.0
+  min_water_level_m: 0.0
+  max_rate_of_rise_m_per_min: 0.20
+  hampel_filter_window: 5
+  hampel_n_sigmas: 3.0
+
+sensors:
+  - id: "SIM-SWD-W112-001"
+    name: "T. Nagar Venkatnarayana Road Drain"
+    ward_id: "WARD-112"
+    sensor_type: "ULTRASONIC_LEVEL"
+    depth_m: 2.5
+    normal_level_m: 0.2
+    warning_level_m: 1.5
+    danger_level_m: 2.1
+  - id: "SIM-SWD-W113-001"
+    name: "Mambalam Canal Outfall Gauge"
+    ward_id: "WARD-113"
+    sensor_type: "PRESSURE_TRANSDUCER"
+    depth_m: 3.0
+    normal_level_m: 0.3
+    warning_level_m: 1.8
+    danger_level_m: 2.6
+  - id: "SIM-SWD-W117-001"
+    name: "Velachery Lake Inlet SWD"
+    ward_id: "WARD-117"
+    sensor_type: "ULTRASONIC_LEVEL"
+    depth_m: 2.8
+    normal_level_m: 0.25
+    warning_level_m: 1.7
+    danger_level_m: 2.4
+  - id: "SIM-SWD-W118-001"
+    name: "Pallikaranai Marsh Discharge Gate"
+    ward_id: "WARD-118"
+    sensor_type: "RADAR_LEVEL"
+    depth_m: 3.5
+    normal_level_m: 0.4
+    warning_level_m: 2.2
+    danger_level_m: 3.0

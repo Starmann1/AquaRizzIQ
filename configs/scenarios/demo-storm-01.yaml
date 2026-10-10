@@ -1,0 +1,50 @@
+# AquaRizz Demo Storm Scenario (DEMO-STORM-01)
+scenario_id: "DEMO-STORM-01"
+name: "Chennai Convective Inundation Event"
+description: "High-intensity localized convective rainfall event centered on WARD-112 and WARD-113 with sensor rise, threshold crossing, Shapley attribution, and evacuation routing."
+seed: 42
+base_clock_speed: 1.0
+
+timeline:
+  - step: 0
+    time_offset_min: 0
+    phase: "NORMAL"
+    rainfall_intensity_mmh: 5.0
+    water_level_fill_ratio: 0.15
+    description: "Dry catchment baseline conditions with operational telemetry."
+  - step: 1
+    time_offset_min: 10
+    phase: "RAINFALL_INTENSIFIES"
+    rainfall_intensity_mmh: 42.0
+    water_level_fill_ratio: 0.45
+    description: "Monsoon squall hits T. Nagar; runoff accumulates in drainage network."
+  - step: 2
+    time_offset_min: 20
+    phase: "THRESHOLD_CROSSING"
+    rainfall_intensity_mmh: 88.0
+    water_level_fill_ratio: 0.78
+    description: "Drainage sensor crosses 0.75 capacity. M2 forecast predicts +40cm in 30 mins."
+  - step: 3
+    time_offset_min: 25
+    phase: "RISK_ESCALATION"
+    rainfall_intensity_mmh: 110.0
+    water_level_fill_ratio: 0.89
+    description: "Hazard H crosses 0.70. Risk escalates to HIGH. Safety floor F1 activates."
+  - step: 4
+    time_offset_min: 30
+    phase: "DECISION_CASE_GENERATED"
+    rainfall_intensity_mmh: 95.0
+    water_level_fill_ratio: 0.92
+    description: "LangGraph pipeline persists draft decision case. Human review requested."
+  - step: 5
+    time_offset_min: 35
+    phase: "APPROVED_AND_DISPATCHED"
+    rainfall_intensity_mmh: 60.0
+    water_level_fill_ratio: 0.94
+    description: "Emergency Coordinator approves warning alert. Safe route to shelter generated."
+  - step: 6
+    time_offset_min: 45
+    phase: "OUTCOME_RECORDED"
+    rainfall_intensity_mmh: 10.0
+    water_level_fill_ratio: 0.65
+    description: "Rainfall abates; actual peak water levels recorded in outcome log for offline learning."
