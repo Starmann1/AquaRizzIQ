@@ -1,7 +1,8 @@
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.database import get_db, Base
+from app.database import get_db, Base, setup_sqlite_spatial
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -16,24 +17,7 @@ def engine():
         poolclass=StaticPool,
     )
     
-    @event.listens_for(eng, "connect")
-    def setup_sqlite_spatial(dbapi_connection, connection_record):
-        def dummy_func(*args):
-            return 1
-        for func in [
-            "RecoverGeometryColumn",
-            "InitSpatialMetaData",
-            "AddGeometryColumn",
-            "CreateSpatialIndex",
-            "CheckSpatialIndex",
-            "DropSpatialIndex",
-            "DiscardGeometryColumn",
-            "DisableSpatialIndex",
-        ]:
-            try:
-                dbapi_connection.create_function(func, -1, dummy_func)
-            except Exception:
-                pass
+    event.listen(eng, "connect", setup_sqlite_spatial)
                 
     return eng
 
@@ -53,7 +37,7 @@ def db_session(engine, tables):
     yield session
     session.close()
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(db_session):
     def override_get_db():
         try:

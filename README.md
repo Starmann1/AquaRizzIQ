@@ -7,11 +7,11 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0-646cff.svg)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
 [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://langchain-ai.github.io/langgraph/)
-[![Tests Passing](https://img.shields.io/badge/tests-43%20passed-brightgreen.svg)]()
 [![Execution](https://img.shields.io/badge/architecture-local--first%20(NO%20DOCKER)-success.svg)]()
 
-> **A Technically Coherent, Local-First, Explainable Early Warning Flood Decision Support System (DSS) for Greater Chennai Corporation (GCC).**  
-> Consolidates physical hydrological proxies, calibrated logistic hazard modeling, LightGBM quantile water-level forecasting, exact game-theoretic Shapley explainability, and LangGraph agentic governance — running **100% natively without Docker**.
+> **A local-first flood decision-support prototype for demonstrating evidence quality, explicit abstention, and human-reviewed response workflows for Greater Chennai Corporation (GCC).**
+
+> **Prototype boundary:** source-backed GCC and historical layers are available locally. TN-SMART is one dated snapshot, not a live feed. Current ward risk and forecasts abstain because verified current inputs and validated models are not connected. The Overview storm controller is a separate deterministic synthetic exercise; its scores and draft action are not observations, forecasts, or dispatches. Routing uses a synthetic graph and does not determine safe evacuation routes. See [the P0 audit](docs/audits/p0-completion-audit.md) and [P1/P2 status](docs/implementation/p1-p2-prototype-roadmap.md).
 
 ---
 
@@ -23,11 +23,13 @@ Greater Chennai Corporation (GCC) suffers from recurrent, severe urban flash-flo
 - **Rapid Runoff:** Severe soil sealing with urban imperviousness exceeding 70% in central commercial districts (T. Nagar, West Mambalam).
 - **Subway/Underpass Flash Surcharges:** Depressed transportation corridors surcharge rapidly during intense convective cloudbursts.
 
-**AquaRizzIQ** replaces vague, probabilistic weather alerts with an **auditable, evidence-bound decision support system** that computes actionable tactical advice (pump deployments, traffic diversions, shelter evacuations) while enforcing strict human approval gates.
+**AquaRizzIQ** demonstrates how an evidence-bound decision-support workflow can expose missing or stale data, withhold unsupported risk scores, and keep draft exercise recommendations behind a human review step. It does not provide operational flood warnings or real emergency instructions.
 
 ---
 
-## 2. Canonical MVP Architecture
+## 2. Architecture Direction and Current Prototype
+
+The diagram below describes the intended architecture direction. It is not a claim that each model, data feed, or integration is currently operational. The working demo currently serves processed geographic/historical layers, fail-closed risk and forecast endpoints, an isolated synthetic scenario, a synthetic routing graph, and authenticated review/alert prototype routes.
 
 AquaRizz is built as a **Modular Monolith** orchestrated by **LangGraph**, executing natively as host processes on the local development workstation:
 
@@ -80,7 +82,9 @@ AquaRizz is built as a **Modular Monolith** orchestrated by **LangGraph**, execu
 
 ---
 
-## 3. The 6 Canonical Autonomous Agents
+## 3. Intended Agent Roles
+
+These roles document the planned governance boundaries. Their presence in the design does not establish that all six agents are deployed or that real observations are currently processed.
 
 All agent state transitions are strictly typed and immutable via `AnalysisState`:
 
@@ -93,7 +97,9 @@ All agent state transitions are strictly typed and immutable via `AnalysisState`
 
 ---
 
-## 4. Scientific & Mathematical Formulations
+## 4. Demonstration Model Notes
+
+The formulas and algorithms below are prototype code paths and design references. Their presence does not establish Chennai-specific calibration, hydrological validation, model accuracy, or operational suitability. Current ward risk and forecasts remain unavailable; the Overview scenario uses explicit synthetic fixtures.
 
 ### A. Hydrological Surface Proxy
 * **SCS-CN Runoff Model:** Computes surface excess precipitation $Q$:
@@ -127,22 +133,20 @@ All agent state transitions are strictly typed and immutable via `AnalysisState`
 
 ---
 
-## 5. The 12 Frontend Interface Views
+## 5. Frontend Prototype Views
 
 The React + TypeScript + Vite web dashboard provides 12 specialized operational views:
 
 | View | Route | Description |
 | :--- | :--- | :--- |
 | **Overview** | `/overview` | Catchment KPI summary cards, active storm scenario controller, monitored ward table. |
-| **Flood Risk Map** | `/map` | Interactive SVG choropleth map of GCC wards with analytical breakdown ($H, E, V, I, R$). |
-| **Ward Detail** | `/wards/:id` | Live telemetry gauges (ultrasonic water depth meter, 1h/3h rain gauges, rate of rise). |
-| **Forecast** | `/forecast` | M2 multi-horizon (+15, +30, +60, +120m) probabilistic forecast fan chart with $P_{10}/P_{50}/P_{90}$ bands. |
-| **Evidence** | `/evidence` | Content-hashed evidence registry cards (`EV-...`), SHA-256 digests, raw telemetry snapshots. |
-| **RCA** | `/rca` | Exact Shapley factor attribution waterfall chart and Safety Verifier (V1–V6) compliance report. |
-| **Recommendations** | `/recommendations`| Operational tactics (P1 evacuation advisories, traffic diversions, dewatering pumps, shelters). |
-| **Human Review** | `/review` | Safety-critical human approval console with mandatory checklists and 60-minute validity gates. |
-| **Alerts** | `/alerts` | Emergency broadcast gateway console with simulated sirens and dispatch logs. |
-| **Routing** | `/routing` | Risk-aware evacuation route generator to nearest relief camps avoiding flooded corridors. |
+| **Flood Risk Map** | `/map` | GCC source boundaries with current risk withheld when evidence is insufficient. |
+| **Ward Detail** | `/wards/:id` | Ward/source detail; no live telemetry gauges are connected. |
+| **Forecast** | `/forecast` | Explicit `INSUFFICIENT_EVIDENCE` state; no operational forecast is connected. |
+| **Evidence** | `/evidence` | Evidence view for prototype records; observed-risk evidence is unavailable until verified inputs exist. |
+| **RCA** | `/rca` | Current risk attribution is unavailable; the synthetic scenario shows a non-causal deterministic input trace. |
+| **Recommendations** | `/recommendations`| No live action advice; the scenario provides a bounded, simulated exercise-review draft. |
+| **Response Routes** | `/routing` | Illustrative path over a synthetic graph; not a safe-route determination or evacuation guidance. |
 | **Audit Trail** | `/audit` | SHA-256 hash-chained audit log with an interactive cryptographic chain verification engine. |
 | **Data Quality** | `/quality` | Sensor telemetry quality matrix (`VALID`, `SUSPECT`, `STALE`, `OUTLIER`, `CONFLICTING`) & health cards. |
 
@@ -155,7 +159,9 @@ AquaRizz is designed to run natively as local processes on Windows, macOS, or Li
 ### Prerequisites
 - Python 3.11+ (Python 3.12 recommended)
 - Node.js 18+ and npm
-- PostgreSQL 16+ with PostGIS extension (or runs automatically with high-speed in-memory SQLite dual dialect)
+- No database service is required for the local demo. PostgreSQL with PostGIS is optional for later deployment checks; SQLite is selected by default and does not verify PostgreSQL roles or PostGIS behavior.
+- SQLite is the default local backend. Chennai boundaries, historical inundation, and the dated rainfall snapshot are copied from bundled processed files into portable SQL tables on development startup. The tables store GeoJSON and provenance, so the demo does not need PostgreSQL or PostGIS. The API contract stays GeoJSON; PostgreSQL deployments can add indexed PostGIS geometry for database-side spatial queries later.
+- The maps use OpenStreetMap raster tiles by default and need internet access; the data overlays remain local. Configure the tile URL and its attribution in `apps/web/.env.example` when using a different provider.
 
 ### 1. Clone & Install Dependencies
 ```bash
@@ -173,13 +179,14 @@ cd ../..
 
 ### 2. Run Automated Test Suite
 ```bash
-# Executes all 43 backend tests
-pytest apps/api/tests/ -v
+# Executes the backend suite
+pytest --basetemp .pytest-tmp apps/api/tests -q
 ```
 
-### 3. Execute End-to-End Live Demonstration Script
+### 3. Verify the Local Prototype Demonstration
 ```bash
-# Simulates full dry -> storm -> surge -> LangGraph -> approval -> dispatch -> route cycle
+# Verifies source-backed API layers, abstention, and the isolated simulated scenario.
+# This script does not approve reviews or dispatch alerts.
 python scripts/run_demo.py
 ```
 
@@ -187,7 +194,13 @@ python scripts/run_demo.py
 
 In **Terminal 1** (Backend FastAPI on `http://127.0.0.1:8000`):
 ```bash
-python -m uvicorn apps.api.app.main:app --host 127.0.0.1 --port 8000 --reload
+cd apps/api
+# SQLite is selected by default and creates ./aquarizz.db in this directory.
+# Development startup creates the local schema and refreshes the bundled datasets.
+# For PostgreSQL later, install PostgreSQL/PostGIS, copy the project .env.example
+# to apps/api/.env, and set DATABASE_URL. Startup enables PostGIS and reports a
+# clear error if the extension or required database permission is missing.
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 * Interactive API Documentation (Swagger / OpenAPI): `http://127.0.0.1:8000/docs`
 
@@ -197,6 +210,15 @@ cd apps/web
 npm run dev
 ```
 * Open your browser and navigate to: `http://localhost:5173`
+
+For a one-time/manual dataset refresh against the configured database, run this from `apps/api`:
+
+```powershell
+cd apps/api
+python ..\..\scripts\load_chennai_demo_data.py
+```
+
+The command uses SQLite unless `DATABASE_URL` is explicitly set. It does not download or require a database server. Running it from `apps/api` also reads the same `.env` as the API process.
 
 ---
 
@@ -219,7 +241,7 @@ AquaRizzIQ/
 │   │   │   ├── risk/                  # Calibrated Logistic Hazard, Matrix Gating & Safety Floors
 │   │   │   ├── routing/               # NetworkX Dijkstra Risk-Penalized Shortest Path Planner
 │   │   │   └── services/              # Ingestion, Data Quality Gate, Human Review Service
-│   │   └── tests/                     # 43 Comprehensive Backend Unit & Integration Tests
+│   │   └── tests/                     # Backend unit and integration tests
 │   └── web/                           # React 18 + TypeScript + Vite Dashboard
 │       ├── src/
 │       │   ├── api/                   # Typed API Client
@@ -250,10 +272,10 @@ AquaRizzIQ/
 
 ## 8. Safety & Policy Invariants
 
-1. **NO DOCKER FOR PROTOTYPE:** All components run natively on developer workstations.
+1. **NO DOCKER FOR PROTOTYPE:** Components can run as native local processes.
 2. **NO AUTONOMOUS DISPATCH:** Agents can propose draft decision cases; only authenticated human operators (Emergency Coordinator role) can authorize public broadcast alerts.
-3. **NO NUMERICAL HALLUCINATION:** Hazard probabilities, water depths, and risk scores are calculated deterministically by pure Python algorithms, never invented by language models.
-4. **FAIL-SAFE ABSTENTION:** If telemetry data is `STALE` or sensor uncertainty exceeds thresholds, the system emits an explicit `ABSTAINED` status with full evidence lineage rather than guessing.
+3. **NO NUMERICAL HALLUCINATION:** Current ward risk and forecast APIs withhold scores when verified evidence is absent. Scenario values are explicitly synthetic.
+4. **FAIL-SAFE ABSTENTION:** The current ward-risk path returns `INSUFFICIENT_EVIDENCE`; the quality policy rejects or excludes unusable inputs and abstains on non-valid critical inputs.
 5. **HONEST PROVENANCE:** Synthetic and simulated data points are explicitly stamped with `is_simulated: true` and visible amber badges across the UI.
 
 ---

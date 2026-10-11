@@ -38,58 +38,56 @@ export default function AlertSimulation() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-white">Alert Broadcast Simulation</h2>
-            <SimulatedBadge />
-          </div>
-          <p className="text-sm text-slate-400 mt-1">
-            Simulated public siren and citizen notification gateway. Consequential alerts require verified human approval.
-          </p>
+      <div className="p-5 bg-sky-50/95 rounded-2xl border border-sky-200/90 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-black text-sky-950 tracking-tight">Alert Broadcast Gateway</h2>
+          <SimulatedBadge />
         </div>
+        <p className="text-sm text-slate-600 mt-1">
+          Simulated public siren and citizen notification gateway. Consequential alerts require human approval sign-off.
+        </p>
       </div>
 
       {dispatchMessage && (
-        <div className="p-3 bg-slate-800 rounded border border-sky-500/50 text-sm font-medium text-sky-300">
+        <div className="p-4 bg-sky-50 rounded-xl border border-sky-200 text-sm font-bold text-sky-950 shadow-2xs">
           {dispatchMessage}
         </div>
       )}
 
       {/* Dispatched Alerts History Table */}
-      <div className="p-5 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
-        <h3 className="text-base font-bold text-white mb-3">Broadcast History Log</h3>
+      <div className="p-6 bg-white/95 rounded-2xl border border-sky-200/90 shadow-sm">
+        <h3 className="text-base font-bold text-sky-950 mb-3">Broadcast History & Siren Log</h3>
 
         {!alerts || alerts.length === 0 ? (
-          <p className="text-xs text-slate-500 py-8 text-center">
-            No alerts have been dispatched yet. Approve a case in Human Review to enable broadcast.
+          <p className="text-xs text-slate-500 py-10 text-center font-medium">
+            No alerts have been dispatched yet. Cases approved in Human Review appear here for broadcast transmission.
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-900/60 text-xs text-slate-400 uppercase">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-sky-50/80 text-sky-950 text-xs uppercase font-bold tracking-wider border-b border-sky-200">
                 <tr>
                   <th className="px-4 py-3">Alert ID</th>
                   <th className="px-4 py-3">Level</th>
-                  <th className="px-4 py-3">Message</th>
+                  <th className="px-4 py-3">Broadcast Message</th>
                   <th className="px-4 py-3">Channel</th>
                   <th className="px-4 py-3">Dispatched At</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/60">
+              <tbody className="divide-y divide-sky-100">
                 {alerts.map((a: any) => (
-                  <tr key={a.id} className="hover:bg-slate-700/30 transition">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-400">
+                  <tr key={a.id} className="hover:bg-sky-50/40 transition">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-sky-900">
                       {a.id.slice(0, 8)}...
                     </td>
                     <td className="px-4 py-3">
                       <RiskBadge level={a.alert_level as any} />
                     </td>
-                    <td className="px-4 py-3 text-slate-200 text-xs">{a.message}</td>
-                    <td className="px-4 py-3 text-xs text-sky-400 font-mono">
+                    <td className="px-4 py-3 text-slate-900 text-xs font-medium">{a.message}</td>
+                    <td className="px-4 py-3 text-xs text-sky-800 font-mono font-bold">
                       {a.dispatch_method}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-xs text-slate-500 font-mono">
                       {new Date(a.dispatched_at).toLocaleTimeString()}
                     </td>
                   </tr>

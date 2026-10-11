@@ -8,25 +8,26 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.db.models import DecisionCase, Assessment, User
 from app.services.review import HumanReviewService
+from app.auth import OPERATOR_ROLES, require_role
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
 
 class ApprovalPayload(BaseModel):
-    reviewer_id: str
-    reviewer_role: str = "EMERGENCY_COORDINATOR"
     rationale: str
     checklist: Dict[str, bool]
 
 
 class RejectionPayload(BaseModel):
-    reviewer_id: str
     rationale: str
     checklist: Dict[str, bool] = {}
 
 
 @router.get("/pending")
-def list_pending_reviews(db: Session = Depends(get_db)):
+def list_pending_reviews(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(OPERATOR_ROLES)),
+):
     """Retrieve decision cases waiting for operator approval."""
     cases = (
         db.query(DecisionCase)
@@ -55,11 +56,12 @@ def approve_review(
     case_id: str,
     payload: ApprovalPayload,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(OPERATOR_ROLES)),
 ):
     """Approve a flood warning or evacuation advisory alert."""
     try:
         cid = uuid.UUID(case_id)
-        rid = uuid.UUID(payload.reviewer_id)
+        rid = uuid.UUID(current_user["sub"])
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")
 
@@ -75,7 +77,7 @@ def approve_review(
     approved = service.approve_case(
         case_id=cid,
         reviewer_id=rid,
-        reviewer_role=payload.reviewer_role,
+        reviewer_role=current_user["role"],
         rationale=payload.rationale,
         checklist=payload.checklist,
         assessed_at=assessed_at,
@@ -95,11 +97,12 @@ def reject_review(
     case_id: str,
     payload: RejectionPayload,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(OPERATOR_ROLES)),
 ):
     """Reject an alert decision case."""
     try:
         cid = uuid.UUID(case_id)
-        rid = uuid.UUID(payload.reviewer_id)
+        rid = uuid.UUID(current_user["sub"])
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")
 

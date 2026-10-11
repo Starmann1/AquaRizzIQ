@@ -13,7 +13,7 @@ def health_check():
 def readiness_check(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
-        return {"status": "ready"}
-    except Exception as e:
+        return {"status": "ready", "database_backend": db.bind.dialect.name}
+    except Exception:
         from fastapi import HTTPException
         raise HTTPException(status_code=503, detail="Database not ready")

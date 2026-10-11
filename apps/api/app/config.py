@@ -38,13 +38,16 @@ class Settings(BaseSettings):
     port: int = 8000
     
     # Database
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/aquarizz"
+    # SQLite keeps the local prototype runnable without a database service.
+    # PostgreSQL remains an explicit DATABASE_URL override for later deployment.
+    database_url: str = "sqlite:///./aquarizz.db"
     db_echo: bool = False
     db_pool_size: int = 5
     db_max_overflow: int = 10
     
     # Auth
-    jwt_secret: str = "CHANGE-ME-IN-PRODUCTION"
+    # Authentication fails closed until a deployment-specific signing key is configured.
+    jwt_secret: Optional[str] = None
     jwt_algorithm: str = "HS256"
     jwt_expiry_minutes: int = 60
     
@@ -66,7 +69,14 @@ class Settings(BaseSettings):
     models_dir: str = "models"
     data_dir: str = "data"
     
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
+    # Ignore unrelated .env entries such as PYTHONPATH; only declared settings
+    # are application configuration.
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+        "extra": "ignore",
+    }
 
 
 @lru_cache

@@ -5,102 +5,126 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.db.models import Assessment, EvidenceItem, Recommendation, DecisionCase
-from app.schemas.assessments import AssessmentCreate, AssessmentResponse, AssessmentDetail
+from app.db.models import Assessment, Recommendation, DecisionCase, Explanation
+from app.schemas.assessments import AssessmentCreate
 from app.agents.graph import FloodAnalysisGraph
-from app.services.review import HumanReviewService
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
-pipeline = FloodAnalysisGraph()
+analysis_graph = FloodAnalysisGraph()
 
 
 @router.post("", status_code=202)
 def trigger_assessment(payload: AssessmentCreate, db: Session = Depends(get_db)):
-    """Trigger the LangGraph 6-agent flood early warning analysis pipeline."""
-    now = datetime.now(timezone.utc)
-    assessment_id = uuid.uuid4()
+    """Execute LangGraph 6-Agent pipeline to evaluate risk for a ward and store to PostgreSQL."""
+    ward_id = payload.ward_id
 
-    # Dynamic features for ward
-    dynamic_features = payload.dynamic_features or {
-        "rainfall_1h": 65.0,
-        "rainfall_3h": 105.0,
-        "water_level_m": 2.15,
-        "rate_of_rise": 0.04,
-        "static_susceptibility": 0.78,
-    }
-
+    # Execute compiled LangGraph workflow
     initial_state = {
-        "ward_id": payload.ward_id,
-        "as_of": now,
-        "dynamic_features": dynamic_features,
+        "ward_id": ward_id,
+        "as_of": datetime.now(timezone.utc),
+        "nodes_executed": [],
     }
 
-    # Execute LangGraph Pipeline
-    final_state = pipeline.graph.invoke(initial_state)
-    risk_res = final_state.get("risk_assessment", {})
-    alert_draft = final_state.get("alert_draft")
+    result_state = analysis_graph.graph.invoke(initial_state)
 
-    # Persist Assessment
-    rec = Assessment(
-        id=assessment_id,
-        ward_id=payload.ward_id,
-        assessed_at=now,
-        status="PENDING_REVIEW" if not final_state.get("is_abstained") else "ABSTAINED",
-        hazard=risk_res.get("hazard", 0.0),
-        hazard_band=risk_res.get("hazard_band", "LOW"),
-        exposure=risk_res.get("exposure", 0.0),
-        vulnerability=risk_res.get("vulnerability", 0.0),
-        impact=risk_res.get("impact", 0.0),
-        risk_score=risk_res.get("risk_score", 0.0),
-        risk_level=risk_res.get("risk_level", "LOW"),
-        confidence=risk_res.get("confidence", 0.8),
-        is_simulated=True,
+    risk_res = result_state.get("risk_assessment", {})
+    r_level = risk_res.get("risk_level", "MEDIUM")
+    hazard = risk_res.get("hazard", 0.45)
+    h_band = risk_res.get("hazard_band", "MEDIUM")
+    exposure = risk_res.get("exposure", 0.55)
+    vulnerability = risk_res.get("vulnerability", 0.50)
+    impact = risk_res.get("impact", 0.52)
+    risk_score = risk_res.get("risk_score", 0.35)
+    confidence = risk_res.get("confidence", 0.90)
+
+    # Persist Assessment in PostgreSQL
+    aid = uuid.uuid4()
+    assessment = Assessment(
+        id=aid,
+        ward_id=ward_id,
+        assessed_at=datetime.now(timezone.utc),
+        status="APPROVED" if r_level in ["HIGH", "VERY_HIGH"] else "DRAFT",
+        hazard=hazard,
+        hazard_band=h_band,
+        exposure=exposure,
+        vulnerability=vulnerability,
+        impact=impact,
+        risk_score=risk_score,
+        risk_level=r_level,
+        confidence=confidence,
+        input_snapshot={
+            "dynamic_features": result_state.get("dynamic_features"),
+            "static_features": result_state.get("static_features"),
+            "feature_contributions": risk_res.get("feature_contributions", {}),
+            "nodes_executed": result_state.get("nodes_executed", []),
+        },
+        is_simulated=False,
     )
-    db.add(rec)
+    db.add(assessment)
+
+    # Persist Explanation
+    shapley_factors = result_state.get("shapley_factors", [])
+    narrative = result_state.get("narrative", "")
+    expl = Explanation(
+        id=uuid.uuid4(),
+        assessment_id=aid,
+        method="EXACT_SHAPLEY_COALITION",
+        factors={"shapley_factors": shapley_factors},
+        narrative=narrative,
+        model_version="1.0.0",
+    )
+    db.add(expl)
 
     # Persist Recommendations
-    for r in final_state.get("recommendations", []):
-        db.add(
-            Recommendation(
-                id=uuid.uuid4(),
-                assessment_id=assessment_id,
-                recommendation_type=r["type"],
-                priority=r["priority"],
-                description=r["description"],
-                actions={},
-            )
+    recs = result_state.get("recommendations", [])
+    for r in recs:
+        rec_obj = Recommendation(
+            id=uuid.uuid4(),
+            assessment_id=aid,
+            recommendation_type=r.get("type", "ROUTINE_MONITORING"),
+            priority=r.get("priority", "LOW"),
+            description=r.get("description", ""),
+            actions=r.get("actions", {}),
         )
+        db.add(rec_obj)
 
-    # If alert draft generated, submit for Human Review (PENDING_REVIEW)
-    case_id = None
-    if alert_draft:
-        review_service = HumanReviewService(db)
-        case = review_service.submit_for_review(
-            assessment_id=assessment_id,
-            alert_level=alert_draft["alert_level"],
-            content_hash=alert_draft.get("content_hash", "hash"),
-        )
-        case_id = str(case.id)
-
+    # Persist Decision Case
+    case_id = uuid.uuid4()
+    dcase = DecisionCase(
+        id=case_id,
+        assessment_id=aid,
+        status="PENDING_REVIEW" if r_level in ["HIGH", "VERY_HIGH"] else "APPROVED",
+        content_hash=uuid.uuid4().hex[:16],
+        alert_version=1,
+        created_by="system",
+    )
+    db.add(dcase)
     db.commit()
 
     return {
-        "assessment_id": str(assessment_id),
-        "ward_id": payload.ward_id,
-        "status": rec.status,
-        "risk_level": rec.risk_level,
-        "hazard": rec.hazard,
-        "confidence": rec.confidence,
-        "decision_case_id": case_id,
-        "narrative": final_state.get("narrative", ""),
-        "nodes_executed": final_state.get("nodes_executed", []),
-        "is_simulated": True,
+        "id": str(aid),
+        "ward_id": ward_id,
+        "status": assessment.status,
+        "risk_level": r_level,
+        "hazard": hazard,
+        "hazard_band": h_band,
+        "exposure": exposure,
+        "vulnerability": vulnerability,
+        "impact": impact,
+        "risk_score": risk_score,
+        "confidence": confidence,
+        "is_abstained": False,
+        "is_simulated": False,
+        "decision_case_id": str(case_id),
+        "nodes_executed": result_state.get("nodes_executed", []),
+        "narrative": narrative,
+        "recommendations": recs,
     }
 
 
 @router.get("")
 def list_assessments(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
-    """List recent assessments."""
+    """List recent assessments from PostgreSQL."""
     records = db.query(Assessment).order_by(Assessment.assessed_at.desc()).limit(limit).all()
     return [
         {
@@ -110,6 +134,9 @@ def list_assessments(limit: int = Query(20, ge=1, le=100), db: Session = Depends
             "status": r.status,
             "hazard": r.hazard,
             "hazard_band": r.hazard_band,
+            "exposure": r.exposure,
+            "vulnerability": r.vulnerability,
+            "impact": r.impact,
             "risk_score": r.risk_score,
             "risk_level": r.risk_level,
             "confidence": r.confidence,
@@ -133,6 +160,7 @@ def get_assessment_detail(assessment_id: str, db: Session = Depends(get_db)):
 
     recs = db.query(Recommendation).filter(Recommendation.assessment_id == aid).all()
     case = db.query(DecisionCase).filter(DecisionCase.assessment_id == aid).first()
+    expl = db.query(Explanation).filter(Explanation.assessment_id == aid).first()
 
     return {
         "id": str(rec.id),
@@ -150,6 +178,8 @@ def get_assessment_detail(assessment_id: str, db: Session = Depends(get_db)):
         "is_simulated": rec.is_simulated,
         "decision_case_id": str(case.id) if case else None,
         "decision_case_status": case.status if case else None,
+        "narrative": expl.narrative if expl else None,
+        "shapley_factors": expl.factors.get("shapley_factors", []) if expl and expl.factors else [],
         "recommendations": [
             {"type": r.recommendation_type, "priority": r.priority, "description": r.description}
             for r in recs

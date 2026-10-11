@@ -344,3 +344,31 @@ class DataSource(Base):
     resolution: Mapped[Optional[str]] = mapped_column(String)
     frequency: Mapped[Optional[str]] = mapped_column(String)
     is_simulated: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class SpatialDataset(Base):
+    """Portable dataset catalog shared by SQLite and PostgreSQL deployments.
+
+    Geometry stays GeoJSON (EPSG:4326) at this boundary so the local SQLite
+    prototype does not require a spatial extension. A PostGIS deployment can
+    add a projected geometry column and indexes without changing API payloads.
+    """
+
+    __tablename__ = "spatial_datasets"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    metadata_json: Mapped[dict] = mapped_column(JSON)
+    feature_count: Mapped[int] = mapped_column(Integer, default=0)
+    loaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SpatialDatasetFeature(Base):
+    """One source feature stored in its exchange CRS with intact attributes."""
+
+    __tablename__ = "spatial_dataset_features"
+
+    dataset_id: Mapped[str] = mapped_column(ForeignKey("spatial_datasets.id", ondelete="CASCADE"), primary_key=True)
+    feature_id: Mapped[str] = mapped_column(String, primary_key=True)
+    geometry_geojson: Mapped[dict] = mapped_column(JSON)
+    properties: Mapped[dict] = mapped_column(JSON)

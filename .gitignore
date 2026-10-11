@@ -36,6 +36,12 @@ apps/web/.vite/
 
 # Database
 *.sql.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# Keep the safe, credential-free example file visible to Git.
+!.env.example
 
 # ML models (large files)
 models/*.joblib
@@ -66,3 +72,10 @@ test-results/
 
 # Alembic
 apps/api/migrations/versions/*.pyc
+
+# Temporary & Diagnostics
+.pytest-http-diagnostic/
+.pytest-tmp/
+tmp/
+dev-local-test
+apps/api/dev-local-test

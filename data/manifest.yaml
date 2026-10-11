@@ -1,0 +1,274 @@
+manifest_version: 1
+retrieved_on: 2026-10-11
+timezone: Asia/Kolkata
+purpose: Source verification for AquaRizz P0 data foundation. Raw files are preserved unchanged.
+coordinate_reference_notes:
+  kml: >-
+    KML does not carry a separate CRS declaration in these files. KML coordinates are
+    longitude, latitude, optional altitude in WGS 84 (Google KML Reference); actual
+    coordinates were range-checked against the Chennai region.
+sources:
+  - id: gcc-divisions-2022
+    name: Chennai GCC Ward Map - 2022
+    organization: Greater Chennai Corporation (GCC)
+    source_credit: Vaidyanathan R; original source listed as chennaicorporation.gov.in
+    url: https://data.opencity.in/dataset/c77de7f8-e377-4990-90fc-4f0f8ca0e2d2/resource/e90176d4-319a-45bd-918e-ecce4f048c4d/download/6a8a05ed-a41c-492a-aade-ff7517e1a4b1.kml
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/gcc-wards-2022.kml
+    size_bytes: 2815875
+    sha256: BE48EF7EB4320279E790F59DA1691ECE9EFC92B34459CA73C492957943C347E0
+    format: KML 2.2
+    crs: WGS 84 longitude/latitude per KML specification; no separate CRS declaration in file
+    temporal_coverage: Boundary dataset labelled 2022; no observation time per division
+    spatial_coverage: Chennai GCC extent; bbox [80.13409479076076, 12.85209293883966, 80.3314935303818, 13.23504905520032]
+    units: Coordinates in degrees; altitude values optional
+    license: Dataset-level license unspecified; resource-level catalog marks Public Domain
+    preprocessing: >-
+      Raw bytes preserved. A derived RFC 7946 feature collection is produced by
+      scripts/import_chennai_boundaries.py using explicit make_valid repairs.
+    quality_findings: 200 unique numbered divisions; 209 polygon components; 9 invalid self-intersecting components
+    limitations: >-
+      Resource-level catalog marks Public Domain while dataset-level license is unspecified.
+      Nine source components require recorded repair; these are not source edits.
+    status: raw_verified_and_normalized_locally
+
+  - id: gcc-zones-2022
+    name: Chennai GCC Zones Map - 2022
+    organization: Greater Chennai Corporation (GCC)
+    source_credit: Vaidyanathan R; original source listed as chennaicorporation.gov.in
+    url: https://data.opencity.in/dataset/c77de7f8-e377-4990-90fc-4f0f8ca0e2d2/resource/00b3ea2e-e3a4-4b28-aec2-769a01404e5b/download/0f0ccbda-9485-4964-b3b1-6ce53af82bbb.kml
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/gcc-zones-2022.kml
+    size_bytes: 758272
+    sha256: 5939657BF539B4C708758232CF8C77129A67928DF3F74699D5B8C3660AEF951D
+    format: KML 2.2
+    crs: WGS 84 longitude/latitude per KML specification; no separate CRS declaration in file
+    temporal_coverage: Boundary dataset labelled 2022; no observation time per zone
+    spatial_coverage: Chennai GCC extent; bbox [80.13409479076076, 12.85209460200581, 80.33149353038178, 13.23504905520032]
+    units: Coordinates in degrees; altitude values optional
+    license: Resource-level catalog marks Public Domain; dataset-level license unspecified
+    preprocessing: >-
+      Raw bytes preserved. Invalid components repaired only by explicit opt-in;
+      unnamed polygon excluded. Division-zone overlay uses EPSG:32644.
+    quality_findings: 15 named zones plus one unnamed polygon; 3 of 16 polygon components invalid
+    limitations: >-
+      Resource-level catalog marks Public Domain while dataset-level license is unspecified.
+      Six division-zone joins remain unresolved under the 99% overlap rule.
+    status: raw_verified_and_normalized_locally
+
+  - id: chennai-daily-rainfall-1991-2023
+    name: Chennai Daily Rainfall Data from 1991-2023
+    organization: OpenCity dataset page identifies IMD; resource metadata source is TNDMA
+    source_credit: TNDMA per resource metadata; attribution/source relationship requires reconciliation
+    url: https://data.opencity.in/dataset/256d1a20-adf5-4e3a-ae18-27664339117a/resource/3086f865-a04c-431e-815d-105ae658871f/download/e5c275eb-a4f2-4412-9677-73654e8f5f4d.csv
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/chennai-rainfall-1991-2023.csv
+    size_bytes: 894044
+    sha256: 98EB6419805E7EA04F0AA1F63C155D8F2D221F1D05EE60B64BEC0838F06AC2FE
+    format: CSV
+    crs: Not applicable; no station coordinates
+    temporal_coverage: Actual rows 1993-03-03 through 2023-12-26; resource title claims 1991-2023
+    spatial_coverage: District field is Chennai; 62 distinct station-name labels; no coordinates
+    units: Rainfall unit is not stated in file or resource schema
+    license: Catalog dataset/resource marked Public Domain
+    preprocessing: None; original bytes retained
+    quality_findings: >-
+      21416 rows; no empty fields; 1447 extra duplicate station/date rows, including
+      86 station/date keys with conflicting rainfall strings; values 0.01 to 348.3;
+      no negative or unparsable values.
+    limitations: >-
+      Do not spatially assign or use as a quantitative risk input until unit, station
+      identity/location, source attribution, and duplicate semantics are verified.
+    status: downloaded_raw_risk_use_blocked
+
+  - id: tnswgw-manual-daily-rainfall-1991-2020
+    name: Rainfall (Manual - Daily), Tamil Nadu SW and GW Department
+    organization: Tamil Nadu Surface Water and Ground Water Department; National Water Informatics Centre catalog
+    source_credit: Tamil Nadu SW GW, as listed by NWIC
+    url: https://nwdp.nwic.gov.in/dataset/307b6182-a475-44ce-854a-7a358d84889d/resource/4323bbad-5cfe-429d-8c92-02b2c469b4be/download/rainfall_manual_daily_tamil-nadu-sw-gw_tn_1991_2020.csv
+    documentation_url: https://nwdp.nwic.gov.in/dataset/rainfall-manual-daily-tamil-nadu-sw-and-gw-department
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/tnswgw-daily-rainfall-1991-2020.csv
+    size_bytes: 4765669
+    sha256: D0D0B4C4C6A09337ABFB1FCFABFED2CBADF90E12B0E41157E59D9CEB718EA37E
+    format: CSV
+    crs: >-
+      Latitude and longitude columns are present; datum is not declared in the resource.
+      Not transformed or spatially used.
+    temporal_coverage: Actual Data Acquisition Time values 1991-01-03 through 2019-09-30
+    spatial_coverage: >-
+      Nine Tamil Nadu districts in this downloaded resource; zero rows for Chennai.
+      66 station labels and 66 distinct coordinate pairs.
+    units: Manual Daily Rainfall (mm), explicitly stated by resource and NWIC metadata
+    license: Resource metadata lists Other (Open)
+    preprocessing: Raw investigation copy; not imported into the Chennai application dataset
+    quality_findings: >-
+      24306 rows; 4 repeated station/coordinate/acquisition-time keys with same values
+      and different SlNo; acquisition times mostly 00:00 with a minority at 08:00, 08:30,
+      and 17:30; not suitable as Chennai rainfall because it contains no Chennai records.
+    limitations: No Chennai stations; source acquisition-time meaning not defined in CSV
+    status: downloaded_verified_units_unsuitable_no_chennai_rows
+
+  - id: chennai-rtff-arg-historical-report-area9-teynampet
+    name: Chennai Realtime Flood Forecasting and Spatial Decision Support System - Historical ARG Report
+    organization: Tamil Nadu State Disaster Management Authority / Commissionerate of Revenue Administration and Disaster Management, as printed in the report
+    source_credit: Official CFM-DSS dashboard historical-data download
+    url: https://chennaifloodmonitor.tn.gov.in/HomePage/Dashboard
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/rtff-arg-area9-teynampet-2026-10-04-2026-10-11.pdf
+    size_bytes: 6348359
+    sha256: 0EE9D063C3362A54E4B1D6EFBCDC53EBEFE688328506BC27CD1340FBDBA93857
+    format: PDF, one page; generated by jsPDF 2.5.1
+    crs: Not applicable; no station coordinates in the report
+    temporal_coverage: Requested dates 2026-10-04 through 2026-10-11; no observation dates or values are present
+    spatial_coverage: One selected station label, Area 9 - Teynampet; no coordinates or authoritative station location metadata in the report
+    units: Dashboard labels rainfall in mm; this report contains no measurements
+    license: No license statement observed in the downloaded report
+    preprocessing: Downloaded from the public historical ARG report control; retained unchanged; text-extracted and visually inspected
+    quality_findings: One-page report contains station/date header and hourly table headings but no observation rows or rainfall values
+    limitations: >-
+      This is one report for one station and date range, not an audit of all dashboard stations
+      or periods. No location coordinates, observations, or validated freshness were available;
+      do not infer that the dashboard has no data generally.
+    status: official_dashboard_report_empty_observation_table
+
+  - id: tnsmart-daily-rainfall-2026-10-11
+    name: TN-SMART Daily Observed Rainfall Page - 2026-10-11
+    organization: TN-SMART / RIMES; page attributes rainfall data to TNDMA
+    source_credit: TN-SMART hosted by RIMES
+    url: https://tnsmart-beta.rimes.int/index.php/Rainfall/daily_data
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/tnsmart-daily-rainfall-page-2026-10-11.html
+    size_bytes: 469564
+    sha256: 3A7AAF7718D8B5D276E230CE24E5303DA705BE746EA5D1F5860730E2FF32B09E
+    format: HTML
+    crs: >-
+      The page embeds GeoJSON Point features as [longitude, latitude] and displays them
+      through Leaflet over web tiles. A geodetic datum is not separately declared; no
+      datum transformation is applied by the local processor.
+    temporal_coverage: 2026-10-10 08:30 through 2026-10-11 08:30 Asia/Kolkata
+    spatial_coverage: >-
+      63 Chennai station records include source latitude/longitude; 62 station points fall
+      within the processed GCC division union. One source point is outside the GCC union.
+    units: mm; page says all units are shown in mm
+    license: Not stated on the retrieved page
+    preprocessing: >-
+      Raw HTML response retained. The processor reads the page's embedded rainfall_data
+      array, validates Chennai station codes and numeric values, and emits source-reported
+      GeoJSON points for records within the GCC division union. It does not transform
+      coordinates or use observations as risk inputs.
+    quality_findings: >-
+      63 Chennai station records have unique station codes and parseable coordinate,
+      rainfall, and date fields; 62 fall within the GCC union. Six in-boundary stations
+      report positive rainfall (4.4, 3.0, 2.2, 1.0, 0.8, and 0.4 mm); remaining in-boundary
+      records report 0 mm. The source map serializes the coordinates as GeoJSON points.
+    limitations: >-
+      The retained page is a single dated snapshot. The source page does not separately
+      declare the geodetic datum of its embedded longitude/latitude coordinates. One source
+      point falls outside the processed GCC division union and is excluded from the GCC map.
+      The snapshot is not a live feed and is not used for ward risk.
+    status: raw_page_verified_source_rendered_station_points
+
+  - id: tnsmart-nungambakkam-rainfall-2026-10-11
+    name: TN-SMART Nungambakkam Station Record - 2026-10-11
+    organization: TN-SMART / RIMES
+    source_credit: TN-SMART station-wise abstract
+    url: https://tnsmart-beta.rimes.int/index.php/MIS/Rainfall/raingauge_stations/village/896/2026-10-11
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/tnsmart-nungambakkam-station-page-2026-10-11.html
+    size_bytes: 45440
+    sha256: F609547485650D570E5F213A18398452FF5C522887D82410E3C3B7B26BFEA81E
+    format: HTML
+    crs: Latitude/longitude published; geodetic datum is unspecified
+    temporal_coverage: Observation date shown as 2026-10-11; exact measurement interval absent on this page
+    spatial_coverage: One Chennai station, Nungambakkam; latitude 13.0667, longitude 80.25
+    units: mm
+    license: Not stated on the retrieved page
+    preprocessing: Raw HTML response retained; supplementary station detail, not the map-layer input.
+    quality_findings: Station status is Working; the row reports 0.0 mm for 2026-10-11
+    limitations: >-
+      Datum and exact observation interval are not declared. The coordinates are not
+      usable as GeoJSON map geometry until datum is established. This single station does
+      not represent citywide conditions and is not used for ward risk calculations.
+    status: raw_verified_unlocated_single_station_observation
+
+  - id: imd-daily-gridded-rainfall-025-2015
+    name: IMD Daily Gridded Rainfall 0.25 Degree, 2015
+    organization: India Meteorological Department, Climate Research and Services, Pune
+    source_credit: IMD rainfall grid, Pai et al. (2014) product
+    url: https://imdpune.gov.in/cmpg/Griddata/RF25.php
+    documentation_url: https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_Bin.html
+    retrieved_on: 2026-10-11
+    source_request: "POST RF25=2015"
+    file: data/raw/chennai/imd-rainfall-grid-025-2015.nc
+    size_bytes: 25431832
+    sha256: C276CE7EBFF1D74D79123A7C777D9EF61C3C5765AA3B6DB464FF6224B30A3926
+    format: NetCDF classic (CDF-1)
+    crs: >-
+      LONGITUDE/LATITUDE coordinate axes in degrees_east/degrees_north are present;
+      no datum/grid-mapping variable is encoded. Values are retained as provided and
+      no projected metric analysis is performed on them.
+    temporal_coverage: 2015-01-01 through 2015-12-31; daily axis, days since 1900-12-31 00:00:00
+    spatial_coverage: >-
+      India grid, 0.25-degree longitude/latitude spacing; 135 by 129 nodes.
+      Only one grid node (80.25 E, 13.00 N) falls inside the GCC division union.
+    units: RAINFALL in mm; missing value -999.0
+    license: IMD download page provides public data; no separate license string on the resource page
+    preprocessing: >-
+      Raw NetCDF preserved. Chennai subset is selected by point-in-polygon against
+      the processed 2022 GCC divisions; dates and rainfall values are copied unchanged.
+    quality_findings: >-
+      NetCDF dimensions TIME=365, LATITUDE=129, LONGITUDE=135; data variable shape
+      365x129x135; daily dates verified from time coordinates; one Chennai grid node.
+    limitations: >-
+      Gridded 0.25-degree product is not a station observation, not ward-resolved,
+      and must not be described as a city-wide rainfall field. Date is daily; source
+      coordinate axes do not identify a geodetic datum. Time-of-day accumulation
+      semantics require care; IMD daily values are reported for 24-hour periods ending 08:30 IST.
+    status: processed_grid_node_missing_all_days_datum_undeclared
+
+  - id: chennai-2015-nrsc-inundation
+    name: Chennai 2015 Floods Inundation Zone
+    organization: Greater Chennai Corporation (GCC) / OpenCity
+    source_credit: Chennai Flood DSS; catalog describes source layer as NRSC
+    url: https://data.opencity.in/dataset/866141ab-3a3f-4dc0-8092-421d97ba29a2/resource/2056abd6-26d7-413b-9dfa-e63cbbf41ee7/download/7cb3cecf-a95a-4786-8032-9c7417655d24.kml
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/flood-2015-nrsc.kml
+    size_bytes: 5474779
+    sha256: FA6943B2916D625DBC4DE3B43CBE4D768A956B2F584FA3C73244FAE32CEE7A2A
+    format: KML 2.2
+    crs: WGS 84 longitude/latitude per KML specification; no separate CRS declaration in file
+    temporal_coverage: Named as 2015 flood extent; acquisition timestamp absent per feature
+    spatial_coverage: >-
+      Bbox [79.3466337952075, 12.5189872481577, 80.3191437258226, 13.3297221042727];
+      extends outside GCC.
+    units: Coordinate degrees; source `area` and `perimeter` attributes lack declared units
+    license: Catalog dataset/resource marked Public Domain
+    preprocessing: >-
+      Raw bytes preserved. Planned processing clips source polygons to the union of
+      verified 2022 GCC divisions; audit records all clipped/excluded features.
+    quality_findings: 4001 polygon components parsed; all inspected polygons valid
+    limitations: >-
+      Original file has no acquisition timestamp per feature. Do not infer event chronology
+      or use as model labels without more temporal/method metadata.
+    status: processed_clipped_to_gcc_historical_map_only
+
+  - id: chennai-inundation-depth-points
+    name: Chennai Inundation Points with Depth of Inundation
+    organization: Greater Chennai Corporation (GCC) / OpenCity
+    source_credit: GCC per resource metadata
+    url: https://data.opencity.in/dataset/022dd080-e927-40d7-897d-adf3ee98ad69/resource/ceddf53f-03c0-4866-8ba8-5e84c8007a85/download/814ca028-4c84-4bd0-aa67-6dbaeb9b6ba5.kml
+    retrieved_on: 2026-10-11
+    file: data/raw/chennai/inundation-points-depth.kml
+    size_bytes: 110179
+    sha256: B4BBBDAEB62C78151CEE81D33D993DAC51F2AF9595BBCD275D75440EA1E6215B
+    format: KML 2.2
+    crs: WGS 84 longitude/latitude per KML specification; no separate CRS declaration in file
+    temporal_coverage: Event/acquisition date absent per feature
+    spatial_coverage: Chennai; bbox [80.1674375, 12.911374, 80.261058, 13.1646096]
+    units: "DEPTH described as inches in the catalog; preserve original values and metadata"
+    license: Catalog dataset/resource marked Public Domain
+    preprocessing: None; original bytes retained
+    quality_findings: 192 point features parsed; all coordinates in valid longitude/latitude ranges
+    limitations: Historical event/time not identified per point
+    status: downloaded_raw_time_context_limited

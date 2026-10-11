@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.db.models import Alert, DecisionCase, Assessment
 from app.services.review import HumanReviewService
+from app.auth import OPERATOR_ROLES, require_role
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -17,7 +18,10 @@ class DispatchPayload(BaseModel):
 
 
 @router.get("")
-def list_alerts(db: Session = Depends(get_db)):
+def list_alerts(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(OPERATOR_ROLES)),
+):
     """Retrieve history of dispatched alerts."""
     records = db.query(Alert).order_by(Alert.dispatched_at.desc()).limit(50).all()
     return [
@@ -39,6 +43,7 @@ def dispatch_alert(
     case_id: str,
     payload: DispatchPayload = DispatchPayload(),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role(OPERATOR_ROLES)),
 ):
     """Dispatch an approved alert to simulated siren / SMS broadcast gateways."""
     try:

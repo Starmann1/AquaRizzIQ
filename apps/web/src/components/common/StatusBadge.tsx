@@ -4,14 +4,14 @@ interface Props {
 
 export default function StatusBadge({ status }: Props) {
   const colors = {
-    DRAFT: 'bg-slate-700 text-slate-300 border-slate-600',
-    PENDING_REVIEW: 'bg-blue-900/50 text-blue-300 border-blue-600/50',
-    APPROVED: 'bg-green-900/50 text-green-300 border-green-600/50',
-    REJECTED: 'bg-red-900/50 text-red-300 border-red-600/50',
+    DRAFT: 'bg-slate-100 text-slate-700 border-slate-300',
+    PENDING_REVIEW: 'bg-sky-50 text-sky-700 border-sky-300',
+    APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-300',
+    REJECTED: 'bg-rose-50 text-rose-700 border-rose-300',
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors[status]}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors[status]}`}>
       {status.replace('_', ' ')}
     </span>
   );

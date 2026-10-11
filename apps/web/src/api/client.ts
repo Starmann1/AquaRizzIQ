@@ -3,18 +3,21 @@ const BASE_URL = '/api/v1';
 export interface WardRisk {
   ward_id: string;
   ward_name: string;
-  zone: string;
-  hazard: number;
-  hazard_band: string;
-  exposure: number;
-  vulnerability: number;
-  impact: number;
-  risk_score: number;
+  zone?: string | null;
+  zone_join_status?: string | null;
+  hazard: number | null;
+  hazard_band: string | null;
+  exposure: number | null;
+  vulnerability: number | null;
+  impact: number | null;
+  risk_score: number | null;
   risk_level: string;
   safety_floor_triggered?: string | null;
-  confidence: number;
+  confidence: number | null;
   is_abstained: boolean;
   is_simulated: boolean;
+  abstention_reason?: string;
+  data_classification?: string;
   feature_contributions?: Record<string, number>;
 }
 
@@ -31,14 +34,88 @@ export interface PendingReview {
 
 export interface DemoState {
   scenario_id: string;
+  fixture_sha256: string;
+  assessment_reference: string;
+  name: string;
+  description: string;
+  data_classification: 'SIMULATED_SCENARIO';
+  assumption_note: string;
   current_step: number;
+  max_step: number;
+  peak_step: number;
   phase: string;
-  water_levels: Record<string, number>;
   is_simulated: boolean;
+  assessment: {
+    status: 'SIMULATED_SCENARIO_ONLY';
+    is_simulated: true;
+    data_classification: string;
+    ward_id: string;
+    config_version: string;
+    fixture_sha256: string;
+    summary: {
+      step: number;
+      time_offset_min: number;
+      phase: string;
+      rainfall_intensity_mmh: number;
+      water_level_m: number;
+      hazard: number;
+      hazard_band: string;
+      risk_level: string;
+      risk_score: number;
+    };
+    inputs: Record<string, number>;
+    exposure: number;
+    vulnerability: number;
+    impact: number;
+    risk_level: string;
+    risk_score: number;
+    hazard: number;
+    hazard_band: string;
+    safety_floor_triggered: string | null;
+    confidence: null;
+    confidence_note: string;
+    explanation: {
+      method: string;
+      causal_claim: false;
+      factors: Array<{ feature: string; input_value: number; weighted_ramp_term: number }>;
+    };
+    recommendations: Array<{
+      type: string;
+      text: string;
+      status: 'DRAFT';
+      approval_required: true;
+      is_simulated: true;
+      catalogue_id: string;
+      scope: 'SIMULATED_EXERCISE_ONLY';
+      affected_ward: string;
+      urgency: 'EXERCISE_ONLY';
+      reason: string;
+      assumptions: string[];
+      confidence: null;
+      evidence_requirements: string[];
+    }>;
+    limitations: string[];
+  };
+  timeline: Array<{
+    step: number;
+    time_offset_min: number;
+    phase: string;
+    rainfall_intensity_mmh: number;
+    water_level_m: number;
+    hazard: number;
+    hazard_band: string;
+    risk_level: string;
+    risk_score: number;
+  }>;
 }
 
 export interface RouteResult {
   status: string;
+  is_simulated: true;
+  prototype_only: true;
+  network_basis: 'SYNTHETIC_DEMONSTRATION_GRAPH';
+  safety_decision: 'NOT_EVALUATED';
+  limitations: string[];
   route_nodes: string[];
   distance_m: number;
   duration_s: number;
@@ -50,10 +127,12 @@ export interface RouteResult {
 }
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const accessToken = sessionStorage.getItem('aquarizz_access_token');
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options?.headers,
     },
   });
@@ -71,6 +150,25 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 }
 
 export const apiClient = {
+  login: async (username: string, password: string) => {
+    const form = new URLSearchParams({ username, password });
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form,
+    });
+    if (!response.ok) {
+      let message = response.statusText;
+      try {
+        const body = await response.json();
+        message = body.detail || body.message || message;
+      } catch {
+        // Keep the HTTP status text when the response has no JSON body.
+      }
+      throw new Error(`API Error [${response.status}]: ${message}`);
+    }
+    return response.json() as Promise<{ access_token: string; token_type: string; username: string; role: string }>;
+  },
   // Risk
   fetchRisk: () => fetchApi<WardRisk[]>('/risk'),
   fetchWardRisk: (wardId: string) => fetchApi<WardRisk>(`/risk/${wardId}`),
@@ -78,6 +176,9 @@ export const apiClient = {
   // Zones & Geospatial
   fetchZones: () => fetchApi<any>('/zones'),
   fetchZoneById: (wardId: string) => fetchApi<any>(`/zones/${wardId}`),
+  fetchHistoricalFloods2015: () => fetchApi<any>('/layers/historical-floods/2015'),
+  fetchHistoricalRainfall2015: () => fetchApi<any>('/layers/rainfall/2015'),
+  fetchTNSMARTRainfall20261011: () => fetchApi<any>('/layers/rainfall/tnsmart/2026-10-11'),
 
   // Assessments & Explanation
   fetchAssessments: () => fetchApi<any[]>('/assessments'),
@@ -88,15 +189,15 @@ export const apiClient = {
 
   // Reviews & Approval State Machine
   fetchPendingReviews: () => fetchApi<PendingReview[]>('/reviews/pending'),
-  approveReview: (caseId: string, reviewerId: string, rationale: string, checklist: Record<string, boolean>) =>
+  approveReview: (caseId: string, rationale: string, checklist: Record<string, boolean>) =>
     fetchApi<any>(`/reviews/${caseId}/approve`, {
       method: 'POST',
-      body: JSON.stringify({ reviewer_id: reviewerId, rationale, checklist, reviewer_role: 'EMERGENCY_COORDINATOR' }),
+      body: JSON.stringify({ rationale, checklist }),
     }),
-  rejectReview: (caseId: string, reviewerId: string, rationale: string) =>
+  rejectReview: (caseId: string, rationale: string) =>
     fetchApi<any>(`/reviews/${caseId}/reject`, {
       method: 'POST',
-      body: JSON.stringify({ reviewer_id: reviewerId, rationale }),
+      body: JSON.stringify({ rationale }),
     }),
 
   // Alerts
@@ -120,10 +221,10 @@ export const apiClient = {
 
   // Demo & Simulation Control
   getDemoState: () => fetchApi<DemoState>('/demo/state'),
-  controlDemo: (action: string) =>
+  controlDemo: (action: string, step?: number) =>
     fetchApi<any>('/demo/control', {
       method: 'POST',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...(step === undefined ? {} : { step }) }),
     }),
 
   // Ingested Telemetry

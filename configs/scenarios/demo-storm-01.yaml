@@ -1,50 +1,84 @@
-# AquaRizz Demo Storm Scenario (DEMO-STORM-01)
+# Deterministic teaching fixture. It is not a historical event replay or live telemetry.
 scenario_id: "DEMO-STORM-01"
-name: "Chennai Convective Inundation Event"
-description: "High-intensity localized convective rainfall event centered on WARD-112 and WARD-113 with sensor rise, threshold crossing, Shapley attribution, and evacuation routing."
-seed: 42
-base_clock_speed: 1.0
+name: "Chennai Urban Storm Exercise"
+description: "A repeatable synthetic scenario for demonstrating the risk workflow without implying current Chennai conditions."
+data_classification: "SIMULATED_SCENARIO"
+assumption_note: "Rainfall, water levels, sensor depth, susceptibility, exposure and vulnerability are explicit demo fixtures. They are not verified measurements or ward statistics."
+ward_id: "WARD-117"
+policy_version: "1.0.0"
+sensor_depth_m: 3.0
+static_features:
+  # Normalized, illustrative values used only to exercise the prototype formulas.
+  population_at_risk: 0.62
+  buildings_at_risk: 0.58
+  roads_at_risk_km: 0.45
+  critical_facilities: 0.40
+  sensitive_population_share: 0.48
+  shelter_distance_gap: 0.55
+  egress_restriction: 0.50
+  housing_density: 0.60
 
 timeline:
   - step: 0
     time_offset_min: 0
     phase: "NORMAL"
     rainfall_intensity_mmh: 5.0
-    water_level_fill_ratio: 0.15
-    description: "Dry catchment baseline conditions with operational telemetry."
+    rainfall_1h_mm: 5.0
+    rainfall_3h_mm: 10.0
+    water_level_m: 0.35
+    rate_of_rise_m_min: 0.0
+    static_susceptibility: 0.55
   - step: 1
     time_offset_min: 10
     phase: "RAINFALL_INTENSIFIES"
     rainfall_intensity_mmh: 42.0
-    water_level_fill_ratio: 0.45
-    description: "Monsoon squall hits T. Nagar; runoff accumulates in drainage network."
+    rainfall_1h_mm: 42.0
+    rainfall_3h_mm: 30.0
+    water_level_m: 0.55
+    rate_of_rise_m_min: 0.02
+    static_susceptibility: 0.62
   - step: 2
     time_offset_min: 20
-    phase: "THRESHOLD_CROSSING"
+    phase: "RUNOFF_BUILDUP"
     rainfall_intensity_mmh: 88.0
-    water_level_fill_ratio: 0.78
-    description: "Drainage sensor crosses 0.75 capacity. M2 forecast predicts +40cm in 30 mins."
+    rainfall_1h_mm: 88.0
+    rainfall_3h_mm: 70.0
+    water_level_m: 1.05
+    rate_of_rise_m_min: 0.05
+    static_susceptibility: 0.72
   - step: 3
     time_offset_min: 25
-    phase: "RISK_ESCALATION"
+    phase: "SIMULATED_HAZARD_PEAK"
     rainfall_intensity_mmh: 110.0
-    water_level_fill_ratio: 0.89
-    description: "Hazard H crosses 0.70. Risk escalates to HIGH. Safety floor F1 activates."
+    rainfall_1h_mm: 110.0
+    rainfall_3h_mm: 95.0
+    water_level_m: 2.0
+    rate_of_rise_m_min: 0.07
+    static_susceptibility: 0.90
   - step: 4
     time_offset_min: 30
-    phase: "DECISION_CASE_GENERATED"
+    phase: "HIGH_WATER_REVIEW"
     rainfall_intensity_mmh: 95.0
-    water_level_fill_ratio: 0.92
-    description: "LangGraph pipeline persists draft decision case. Human review requested."
+    rainfall_1h_mm: 95.0
+    rainfall_3h_mm: 130.0
+    water_level_m: 2.4
+    rate_of_rise_m_min: 0.01
+    static_susceptibility: 0.90
   - step: 5
     time_offset_min: 35
-    phase: "APPROVED_AND_DISPATCHED"
+    phase: "RAINFALL_EASING"
     rainfall_intensity_mmh: 60.0
-    water_level_fill_ratio: 0.94
-    description: "Emergency Coordinator approves warning alert. Safe route to shelter generated."
+    rainfall_1h_mm: 60.0
+    rainfall_3h_mm: 140.0
+    water_level_m: 2.1
+    rate_of_rise_m_min: 0.0
+    static_susceptibility: 0.90
   - step: 6
     time_offset_min: 45
-    phase: "OUTCOME_RECORDED"
+    phase: "RECOVERY_REVIEW"
     rainfall_intensity_mmh: 10.0
-    water_level_fill_ratio: 0.65
-    description: "Rainfall abates; actual peak water levels recorded in outcome log for offline learning."
+    rainfall_1h_mm: 10.0
+    rainfall_3h_mm: 130.0
+    water_level_m: 1.2
+    rate_of_rise_m_min: 0.0
+    static_susceptibility: 0.90

@@ -15,9 +15,17 @@ import os
 import sys
 import uuid
 from datetime import datetime, timezone
-from shapely.geometry import shape
+from shapely.geometry import shape, Polygon, MultiPolygon
 
-# Add project root to sys.path
+# Ensure stdout handles UTF-8 on Windows
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    except Exception:
+        pass
+
+# Add apps/api to sys.path for direct script execution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "api")))
 
 from app.database import engine, SessionLocal, Base
@@ -65,6 +73,7 @@ def seed_database():
         terrain_calc = TerrainFeatureCalculator()
         total_cells = 0
 
+        seen_grid_coords = set()
         if os.path.exists(wards_file):
             with open(wards_file, "r") as f:
                 wards_geojson = json.load(f)
@@ -72,6 +81,8 @@ def seed_database():
             for feat in wards_geojson.get("features", []):
                 props = feat["properties"]
                 geom_wgs = shape(feat["geometry"])
+                if not isinstance(geom_wgs, (Polygon, MultiPolygon)):
+                    continue
                 geom_utm = to_utm(geom_wgs)
 
                 existing_ward = db.query(Ward).filter(Ward.id == props["ward_id"]).first()
@@ -111,6 +122,11 @@ def seed_database():
                     # Generate 250m grid cells
                     cells = grid_gen.generate_cells_for_polygon(props["ward_id"], geom_wgs)
                     for c in cells:
+                        coord_key = (c["ix"], c["iy"])
+                        if coord_key in seen_grid_coords:
+                            continue
+                        seen_grid_coords.add(coord_key)
+
                         cell_id = uuid.uuid4()
                         cell = GridCell(
                             id=cell_id,

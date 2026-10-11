@@ -8,6 +8,7 @@ import math
 import uuid
 from typing import List, Dict, Any, Tuple
 from shapely.geometry import Polygon, MultiPolygon, shape
+from shapely.geometry.base import BaseGeometry
 from app.geospatial.crs import to_utm, to_wgs84
 
 CELL_SIZE_M = 250.0  # Canonical 250m analytical resolution
@@ -20,7 +21,7 @@ class GridGenerator:
         self.cell_size = cell_size_m
 
     def generate_cells_for_polygon(
-        self, ward_id: str, poly_wgs84: Polygon | MultiPolygon
+        self, ward_id: str, poly_wgs84: Polygon | MultiPolygon | BaseGeometry
     ) -> List[Dict[str, Any]]:
         """Generate 250m grid cells covering a given ward polygon.
         

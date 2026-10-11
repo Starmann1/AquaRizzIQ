@@ -3,7 +3,7 @@ import pytest
 from app.agents.graph import FloodAnalysisGraph
 
 
-def test_langgraph_pipeline_execution():
+def test_langgraph_abstains_when_source_adapters_are_unavailable():
     pipeline = FloodAnalysisGraph()
 
     initial_state = {
@@ -28,21 +28,15 @@ def test_langgraph_pipeline_execution():
     final_state = pipeline.graph.invoke(initial_state)
 
     nodes = final_state.get("nodes_executed", [])
-    assert "plan" in nodes
-    assert "retrieve_validate" in nodes
-    assert "forecast" in nodes
-    assert "risk" in nodes
-    assert "rca_explain" in nodes
-    assert "decide" in nodes
-    assert "policy_check" in nodes
-    assert "abstain" not in nodes
-
-    # High risk -> alert draft must be produced for human review
-    assert final_state["risk_assessment"]["risk_level"] in ("HIGH", "VERY_HIGH")
-    alert_draft = final_state["alert_draft"]
-    assert alert_draft is not None
-    assert alert_draft["status"] == "PENDING_REVIEW"
-    assert len(alert_draft["recommendations"]) > 0
+    assert nodes == ["plan", "retrieve_validate", "abstain"]
+    assert final_state["is_abstained"] is True
+    assert final_state["dynamic_features"] == {}
+    assert final_state["static_features"] == {}
+    assert final_state["evidence_items"] == []
+    assert final_state["quality_report"]["source_verified"] is False
+    assert "risk_assessment" not in final_state
+    assert "alert_draft" not in final_state
+    assert "caller-supplied numeric values are not accepted" in final_state["abstention_reason"]
 
 
 def test_langgraph_abstention_on_empty_data():

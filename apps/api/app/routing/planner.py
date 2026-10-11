@@ -1,4 +1,4 @@
-"""AquaRizz Flood-Aware Evacuation Routing Planner (P1-16).
+"""AquaRizz synthetic graph path demonstration (P1-16).
 
 Calculates risk-penalized shortest paths using NetworkX Dijkstra:
   cost_e = travel_time_e * (1 + 4 * r_e)
@@ -13,7 +13,7 @@ import networkx as nx
 
 
 class EvacuationRoutePlanner:
-    """Computes flood-aware evacuation paths to designated shelters."""
+    """Computes illustrative paths over a synthetic graph for UI demonstrations."""
 
     def __init__(self, base_speed_kmh: float = 35.0, flood_penalty_mult: float = 4.0):
         self.base_speed = base_speed_kmh
@@ -21,7 +21,7 @@ class EvacuationRoutePlanner:
         self.graph = self._build_synthetic_chennai_network()
 
     def _build_synthetic_chennai_network(self) -> nx.Graph:
-        """Construct a topological road network representing T. Nagar / Mambalam / Velachery corridor."""
+        """Construct a synthetic topology inspired by a Chennai corridor."""
         G = nx.Graph()
 
         # Nodes (lat, lon, name)
@@ -62,7 +62,7 @@ class EvacuationRoutePlanner:
         destination_node: str,
         hazard_risk_overlay: Dict[Tuple[str, str], float] | None = None,
     ) -> Dict[str, Any]:
-        """Compute the safest route avoiding flood-inundated edges.
+        """Compute a weighted graph path using illustrative edge-risk inputs.
         
         Returns:
             Dict containing route_nodes, total_distance_m, duration_s, srs_score, status.
@@ -99,8 +99,8 @@ class EvacuationRoutePlanner:
             path = nx.shortest_path(H, source=origin_node, target=destination_node, weight="cost")
         except (nx.NetworkXNoPath, nx.NodeNotFound):
             return {
-                "status": "NO_SAFE_ROUTE",
-                "message": "All navigable paths are blocked by hazardous floodwaters.",
+                "status": "NO_PATH_FOUND",
+                "message": "No path exists in the synthetic demonstration graph for these illustrative edge values.",
                 "route_nodes": [],
                 "distance_m": 0.0,
                 "duration_s": 0.0,
@@ -129,6 +129,10 @@ class EvacuationRoutePlanner:
 
         return {
             "status": "ROUTE_FOUND",
+            "is_simulated": True,
+            "prototype_only": True,
+            "network_basis": "SYNTHETIC_DEMONSTRATION_GRAPH",
+            "safety_decision": "NOT_EVALUATED",
             "route_nodes": path,
             "distance_m": round(total_dist, 1),
             "duration_s": round(total_time_s, 1),

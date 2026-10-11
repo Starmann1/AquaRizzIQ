@@ -9,32 +9,32 @@ async def test_audit_api_list_and_verify(client):
     assert res.status_code == 200
     data = res.json()
     assert isinstance(data, list)
-    assert len(data) >= 1
+    assert isinstance(data, list)
 
     # Verify chain endpoint
     res_verify = await client.post("/api/v1/audit/verify")
     assert res_verify.status_code == 200
     verify_data = res_verify.json()
-    assert "is_valid" in verify_data
     assert verify_data["is_valid"] is True
+    assert verify_data["records_checked"] == len(data)
 
 
 @pytest.mark.asyncio
 async def test_forecast_api_endpoints(client):
-    # All wards
     res = await client.get("/api/v1/forecasts")
     assert res.status_code == 200
     data = res.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert data["status"] == "INSUFFICIENT_EVIDENCE"
+    assert data["forecast_horizons"] is None
+    assert data["is_simulated"] is False
 
     # Single ward
     res_single = await client.get("/api/v1/forecasts?ward_id=WARD-117")
     assert res_single.status_code == 200
     ward_forecast = res_single.json()
     assert ward_forecast["ward_id"] == "WARD-117"
-    assert "forecast_horizons" in ward_forecast
-    assert "plus_15m" in ward_forecast["forecast_horizons"]
+    assert ward_forecast["status"] == "INSUFFICIENT_EVIDENCE"
+    assert ward_forecast["forecast_horizons"] is None
 
 
 @pytest.mark.asyncio
@@ -43,9 +43,7 @@ async def test_recommendations_api_endpoint(client):
     assert res.status_code == 200
     recs = res.json()
     assert isinstance(recs, list)
-    assert len(recs) >= 1
-    assert "recommendation_type" in recs[0]
-    assert "priority" in recs[0]
+    assert recs == []
 
 
 @pytest.mark.asyncio
@@ -55,4 +53,6 @@ async def test_data_quality_api_endpoint(client):
     q = res.json()
     assert "status_distribution" in q
     assert "active_telemetry_sources" in q
-    assert q["status_distribution"]["VALID"] >= 1
+    assert q["verified_live_source_available"] is False
+    assert q["data_status"] in {"NO_DATA", "SIMULATED_ONLY", "MIXED", "STORED_UNVERIFIED"}
+    assert sum(q["status_distribution"].values()) == q["active_sensor_count"]

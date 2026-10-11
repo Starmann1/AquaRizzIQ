@@ -15,6 +15,8 @@ def test_evacuation_routing_clear_conditions():
     assert result["distance_m"] == 450.0
     assert result["duration_s"] > 0.0
     assert result["srs_score"] > 60.0
+    assert result["is_simulated"] is True
+    assert result["safety_decision"] == "NOT_EVALUATED"
 
 
 def test_evacuation_routing_blocked_road_avoidance():
@@ -57,5 +59,5 @@ def test_no_safe_route_fallback():
         hazard_risk_overlay=hazard_overlay,
     )
 
-    assert res_blocked["status"] == "NO_SAFE_ROUTE"
-    assert "blocked by hazardous floodwaters" in res_blocked["message"]
+    assert res_blocked["status"] == "NO_PATH_FOUND"
+    assert "synthetic demonstration graph" in res_blocked["message"]

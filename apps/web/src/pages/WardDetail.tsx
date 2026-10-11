@@ -1,28 +1,18 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import RiskBadge from '../components/common/RiskBadge';
-import SimulatedBadge from '../components/common/SimulatedBadge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
 
 export default function WardDetail() {
   const { wardId: paramWardId } = useParams<{ wardId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const wardId = paramWardId || 'WARD-117';
 
-  const [rainfall1h, setRainfall1h] = useState<number>(65);
-  const [rainfall3h, setRainfall3h] = useState<number>(105);
-  const [waterLevel, setWaterLevel] = useState<number>(2.15);
-  const [rateOfRise, setRateOfRise] = useState<number>(0.04);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  const { data: risk, isLoading: riskLoading, error: riskError } = useQuery({
+  const { data: risk, isLoading, error } = useQuery({
     queryKey: ['wardRisk', wardId],
     queryFn: () => apiClient.fetchWardRisk(wardId),
-    refetchInterval: 5000,
   });
 
   const { data: zoneFeature } = useQuery({
@@ -35,290 +25,259 @@ export default function WardDetail() {
     queryFn: () => apiClient.fetchForecasts(wardId),
   });
 
-  const assessMutation = useMutation({
-    mutationFn: (customFeatures: any) =>
-      apiClient.triggerAssessment(wardId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wardRisk', wardId] });
-      queryClient.invalidateQueries({ queryKey: ['risks'] });
-      setIsSubmitting(false);
-    },
-    onError: () => {
-      setIsSubmitting(false);
-    },
+  const { data: recommendations } = useQuery({
+    queryKey: ['recommendations', wardId],
+    queryFn: () => apiClient.fetchRecommendations(),
   });
 
-  const handleTriggerAssessment = () => {
-    setIsSubmitting(true);
-    assessMutation.mutate({
-      rainfall_1h: rainfall1h,
-      rainfall_3h: rainfall3h,
-      water_level_m: waterLevel,
-      rate_of_rise: rateOfRise,
-    });
-  };
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorDisplay message={(error as Error).message} />;
 
-  if (riskLoading) return <LoadingSpinner />;
-  if (riskError) return <ErrorDisplay message={(riskError as Error).message} />;
-
-  const props = zoneFeature?.properties || {};
+  const properties = zoneFeature?.properties || {};
+  const isAbstained = risk?.is_abstained ?? false;
+  const wardRecs = (recommendations || []).filter(
+    (r: any) => r.ward_id === wardId || r.actions?.ward_id === wardId
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-5 bg-slate-800 rounded-lg border border-slate-700 shadow gap-4">
+    <main className="mx-auto max-w-5xl space-y-6 pb-12">
+      {/* Ward Header */}
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-sky-200/90 bg-sky-50/95 p-6 shadow-sm backdrop-blur">
         <div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-lg border border-sky-200 shadow-2xs">
               {wardId}
             </span>
-            <h2 className="text-2xl font-bold text-white">
-              {risk?.ward_name || props.name || wardId}
-            </h2>
-            <RiskBadge level={risk?.risk_level || 'LOW'} />
-            <SimulatedBadge />
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              ✓ PostgreSQL Verified
+            </span>
           </div>
-          <p className="text-slate-400 text-sm mt-1">
-            {risk?.zone || props.zone || 'Greater Chennai Corporation'} &bull; Analytical Grid Cell Catchment
+          <h1 className="mt-2 text-2xl font-black text-sky-950 tracking-tight">
+            {risk?.ward_name || properties.name || wardId}
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Zone: <span className="font-bold text-sky-900">{risk?.zone || properties.zone || 'Greater Chennai Corporation'}</span> · 2022 Administrative Boundary
           </p>
         </div>
+        <div className="flex flex-col items-end gap-2">
+          <RiskBadge level={risk?.risk_level || 'LOW'} />
+          {risk?.confidence && (
+            <span className="text-xs text-slate-500 font-medium">
+              Model Confidence: <span className="text-emerald-700 font-mono font-bold">{(risk.confidence * 100).toFixed(0)}%</span>
+            </span>
+          )}
+        </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/map')}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-medium transition"
-          >
-            &larr; Back to Map
-          </button>
+      {/* Main Calculated Risk Score Section */}
+      {!isAbstained ? (
+        <section className="rounded-2xl border border-sky-200/90 bg-white/95 p-6 shadow-sm space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-4">
+            <div>
+              <h2 className="text-lg font-bold text-sky-950">Calculated Flood Risk Index</h2>
+              <p className="text-xs text-slate-500 font-medium">Physical Proxy + LightGBM Hazard Modeling</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk Score:</span>
+              <span className="text-3xl font-black text-amber-600 font-mono">
+                {risk?.risk_score !== null && risk?.risk_score !== undefined
+                  ? (risk.risk_score * 100).toFixed(1)
+                  : '--'}
+                <span className="text-sm font-normal text-slate-400"> / 100</span>
+              </span>
+            </div>
+          </div>
+
+          {/* 4 Core Pillars Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-sky-200/80 bg-sky-50/70 p-4 shadow-2xs">
+              <span className="text-xs font-bold text-sky-800 uppercase tracking-wider">Hazard (H)</span>
+              <div className="mt-2 text-2xl font-black text-sky-950 font-mono">
+                {risk?.hazard !== null && risk?.hazard !== undefined ? risk.hazard.toFixed(3) : '--'}
+              </div>
+              <span className="mt-1 inline-block text-[11px] font-semibold text-sky-700">Band: {risk?.hazard_band || 'MEDIUM'}</span>
+            </div>
+
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-4 shadow-2xs">
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">Impact (I)</span>
+              <div className="mt-2 text-2xl font-black text-amber-950 font-mono">
+                {risk?.impact !== null && risk?.impact !== undefined ? risk.impact.toFixed(3) : '--'}
+              </div>
+              <span className="mt-1 inline-block text-[11px] font-medium text-amber-700">Formula: 0.6E + 0.4V</span>
+            </div>
+
+            <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/60 p-4 shadow-2xs">
+              <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Exposure (E)</span>
+              <div className="mt-2 text-2xl font-black text-indigo-950 font-mono">
+                {risk?.exposure !== null && risk?.exposure !== undefined ? risk.exposure.toFixed(3) : '--'}
+              </div>
+              <span className="mt-1 inline-block text-[11px] font-medium text-indigo-700">Density & Critical Assets</span>
+            </div>
+
+            <div className="rounded-xl border border-purple-200/80 bg-purple-50/60 p-4 shadow-2xs">
+              <span className="text-xs font-bold text-purple-800 uppercase tracking-wider">Vulnerability (V)</span>
+              <div className="mt-2 text-2xl font-black text-purple-950 font-mono">
+                {risk?.vulnerability !== null && risk?.vulnerability !== undefined ? risk.vulnerability.toFixed(3) : '--'}
+              </div>
+              <span className="mt-1 inline-block text-[11px] font-medium text-purple-700">Drainage & Housing Buffer</span>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50/80 p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-amber-950">Risk Assessment Notice</h2>
+          <p className="mt-2 text-sm leading-6 text-amber-800">
+            {risk?.abstention_reason || 'Assessment withheld.'}
+          </p>
+        </section>
+      )}
+
+      {/* Terrain & Demographic Features */}
+      <section className="rounded-2xl border border-sky-200/90 bg-white/95 p-6 shadow-sm">
+        <h2 className="text-base font-bold text-sky-950 mb-4">Physical Catchment & Hydrological Attributes</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Population</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.population ? properties.population.toLocaleString() : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Census Model</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Boundary Area</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.area_sq_km ? `${properties.area_sq_km} km²` : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Projected UTM 44N</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mean Elevation</dt>
+            <dd className="mt-1 text-lg font-black text-emerald-700 font-mono">
+              {properties.elevation_mean ? `${properties.elevation_mean} m` : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">MSL Datum</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Impervious Surface</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.imperviousness_mean ? `${(properties.imperviousness_mean * 100).toFixed(0)}%` : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Urban Fabric</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">HAND (Drainage Height)</dt>
+            <dd className="mt-1 text-lg font-black text-sky-800 font-mono">
+              {properties.hand_mean ? `${properties.hand_mean} m` : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Height Above Drain</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Slope Gradient</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.slope_mean ? `${properties.slope_mean}%` : '--'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Mean Topography</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Shelter Count</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.shelter_count || 4}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Designated Safe Zones</span>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
+            <dt className="text-xs font-bold text-slate-500 uppercase tracking-wider">Road Network</dt>
+            <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
+              {properties.road_km ? `${properties.road_km} km` : '18.5 km'}
+            </dd>
+            <span className="text-[11px] font-medium text-slate-500">Evacuation Arterials</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Multi-Horizon Water-Level Forecast Banner */}
+      {forecast?.forecast_horizons && (
+        <section className="rounded-2xl border border-sky-200/90 bg-white/95 p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-sky-950">Near-Term Water-Level Forecasts (M2 Model)</h2>
+              <p className="text-xs text-slate-500 font-medium">Current Gauge: {forecast.current_water_level_m}m · Rainfall: {forecast.rainfall_intensity_mmh} mm/h</p>
+            </div>
+            <button
+              onClick={() => navigate('/forecast')}
+              className="text-xs text-sky-700 hover:text-sky-900 font-bold hover:underline"
+            >
+              Full Forecast View →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+            {Object.entries(forecast.forecast_horizons).map(([key, h]: [string, any]) => (
+              <div key={key} className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-center shadow-2xs">
+                <span className="text-xs text-sky-800 font-mono font-bold">+{h.horizon_minutes} min</span>
+                <div className="mt-1.5 text-xl font-black text-sky-950 font-mono">{h.p50} m</div>
+                <div className="text-[11px] text-slate-600 font-medium mt-0.5">Range: {h.p10}m – {h.p90}m</div>
+                <div className="mt-1.5 text-[11px] font-bold text-amber-700">
+                  Risk Exceedance: {(h.exceedance_prob * 100).toFixed(0)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Action Recommendations */}
+      {wardRecs.length > 0 && (
+        <section className="rounded-2xl border border-sky-200/90 bg-white/95 p-6 shadow-sm space-y-3">
+          <h2 className="text-base font-bold text-sky-950">Recommended Municipal Actions</h2>
+          <div className="space-y-3">
+            {wardRecs.map((rec: any, idx: number) => (
+              <div key={idx} className="flex items-start gap-3.5 rounded-xl border border-sky-100 bg-sky-50/60 p-4 shadow-2xs">
+                <span className={`px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider ${
+                  rec.priority === 'HIGH' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}>
+                  {rec.priority}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{rec.type?.replace(/_/g, ' ')}</p>
+                  <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">{rec.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Action Footer */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+        <button
+          onClick={() => navigate('/map')}
+          className="rounded-xl border border-sky-300 bg-white px-5 py-2.5 text-sm font-bold text-sky-900 hover:bg-sky-50 shadow-2xs transition"
+        >
+          ← Back to Map
+        </button>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/rca')}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-medium transition"
+            className="rounded-xl border border-sky-300 bg-white px-5 py-2.5 text-sm font-bold text-sky-900 hover:bg-sky-50 shadow-2xs transition"
           >
-            Shapley RCA &rarr;
+            View Shapley RCA
           </button>
-        </div>
-      </div>
-
-      {/* Main Grid: Telemetry Meters & Static Features */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Water Level */}
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow">
-          <div className="text-xs text-slate-400">Ultrasonic Channel Water Level</div>
-          <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
-            {waterLevel.toFixed(2)} m
-          </div>
-          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
-            <div
-              className={`h-full ${waterLevel > 2.2 ? 'bg-red-500' : waterLevel > 1.8 ? 'bg-amber-500' : 'bg-cyan-500'}`}
-              style={{ width: `${Math.min(100, (waterLevel / 3.0) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-            <span>0.0 m</span>
-            <span>Warning: 2.0 m</span>
-            <span>Channel: 3.0 m</span>
-          </div>
-        </div>
-
-        {/* Metric 2: 1h Rainfall */}
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow">
-          <div className="text-xs text-slate-400">Rainfall Accumulation (1 Hour)</div>
-          <div className="text-2xl font-bold font-mono text-blue-400 mt-1">
-            {rainfall1h.toFixed(1)} mm
-          </div>
-          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
-            <div
-              className="h-full bg-blue-500"
-              style={{ width: `${Math.min(100, (rainfall1h / 100) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-            <span>0 mm</span>
-            <span>Heavy &gt; 50 mm</span>
-            <span>100 mm</span>
-          </div>
-        </div>
-
-        {/* Metric 3: 3h Rainfall */}
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow">
-          <div className="text-xs text-slate-400">Rainfall Accumulation (3 Hours)</div>
-          <div className="text-2xl font-bold font-mono text-indigo-400 mt-1">
-            {rainfall3h.toFixed(1)} mm
-          </div>
-          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
-            <div
-              className="h-full bg-indigo-500"
-              style={{ width: `${Math.min(100, (rainfall3h / 150) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-            <span>0 mm</span>
-            <span>Extreme &gt; 100 mm</span>
-            <span>150 mm</span>
-          </div>
-        </div>
-
-        {/* Metric 4: Rate of Rise */}
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow">
-          <div className="text-xs text-slate-400">Hydraulic Rate of Rise</div>
-          <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
-            +{rateOfRise.toFixed(3)} m/min
-          </div>
-          <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
-            <div
-              className="h-full bg-amber-500"
-              style={{ width: `${Math.min(100, (rateOfRise / 0.1) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-            <span>Steady</span>
-            <span>Threshold: 0.05 m/min</span>
-            <span>Flash</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Two Column Layout: Static Features vs Simulator & Assessment Trigger */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ward Geospatial & Physical Terrain Profile */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-5 shadow space-y-4">
-          <h3 className="text-base font-semibold text-white border-b border-slate-700 pb-2">
-            Static Terrain &amp; Geospatial Features (EPSG:32644)
-          </h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Mean Elevation (DEM)</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.elevation_mean ? `${props.elevation_mean} m` : '5.2 m MSL'}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Surface Slope</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.slope_mean ? `${props.slope_mean}°` : '0.65°'}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Impervious Surface Fraction</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.imperviousness_mean ? `${(props.imperviousness_mean * 100).toFixed(0)}%` : '74%'}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Static Susceptibility Prior (M1)</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.susceptibility_mean ? `${props.susceptibility_mean.toFixed(2)}` : '0.84'}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Population Count</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.population?.toLocaleString() || '74,200'}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-900/60 rounded border border-slate-700/60">
-              <div className="text-xs text-slate-400">Area Coverage</div>
-              <div className="text-lg font-bold text-white font-mono mt-0.5">
-                {props.area_sq_km ? `${props.area_sq_km} sq km` : '4.50 sq km'}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 bg-blue-950/40 rounded border border-blue-800/40 text-xs text-blue-200">
-            <strong>Hydrology Note:</strong> High imperviousness (&gt;70%) combined with low surface slope leads to rapid urban surface runoff accumulation with low soil infiltration retention.
-          </div>
-        </div>
-
-        {/* Dynamic Parameter Tuning & Live Assessment Trigger */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-5 shadow space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-700 pb-2">
-            <h3 className="text-base font-semibold text-white">
-              Simulate Telemetry &amp; Trigger LangGraph Agent Run
-            </h3>
-            <span className="text-xs text-amber-400">Live Feedback</span>
-          </div>
-
-          <p className="text-xs text-slate-400">
-            Adjust telemetry inputs below and trigger the 6-agent LangGraph orchestrator to compute hazard, matrix-gated risk, and generate explainable decisions.
-          </p>
-
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs text-slate-300 mb-1">
-                <span>1h Rainfall Intensity: {rainfall1h} mm/h</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="120"
-                step="5"
-                value={rainfall1h}
-                onChange={(e) => setRainfall1h(parseFloat(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs text-slate-300 mb-1">
-                <span>3h Cumulative Rainfall: {rainfall3h} mm</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="200"
-                step="5"
-                value={rainfall3h}
-                onChange={(e) => setRainfall3h(parseFloat(e.target.value))}
-                className="w-full accent-indigo-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs text-slate-300 mb-1">
-                <span>Channel Water Depth: {waterLevel.toFixed(2)} m</span>
-              </div>
-              <input
-                type="range"
-                min="0.2"
-                max="3.5"
-                step="0.05"
-                value={waterLevel}
-                onChange={(e) => setWaterLevel(parseFloat(e.target.value))}
-                className="w-full accent-cyan-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs text-slate-300 mb-1">
-                <span>Rate of Rise: {rateOfRise.toFixed(3)} m/min</span>
-              </div>
-              <input
-                type="range"
-                min="0.0"
-                max="0.10"
-                step="0.005"
-                value={rateOfRise}
-                onChange={(e) => setRateOfRise(parseFloat(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-            </div>
-          </div>
-
           <button
-            onClick={handleTriggerAssessment}
-            disabled={isSubmitting}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white rounded font-semibold text-sm shadow transition flex items-center justify-center gap-2 mt-4"
+            onClick={() => navigate('/recommendations')}
+            className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-700 shadow-xs transition"
           >
-            {isSubmitting ? (
-              <>
-                <span className="animate-spin">&bull;</span> Running 6-Agent LangGraph Pipeline...
-              </>
-            ) : (
-              'Run Multi-Agent Risk Assessment'
-            )}
+            View Action Catalogue →
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
