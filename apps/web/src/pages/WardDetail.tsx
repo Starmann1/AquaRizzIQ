@@ -48,9 +48,6 @@ export default function WardDetail() {
             <span className="font-mono text-xs font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-lg border border-sky-200 shadow-2xs">
               {wardId}
             </span>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              ✓ PostgreSQL Verified
-            </span>
           </div>
           <h1 className="mt-2 text-2xl font-black text-sky-950 tracking-tight">
             {risk?.ward_name || properties.name || wardId}
@@ -75,7 +72,6 @@ export default function WardDetail() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-4">
             <div>
               <h2 className="text-lg font-bold text-sky-950">Calculated Flood Risk Index</h2>
-              <p className="text-xs text-slate-500 font-medium">Physical Proxy + LightGBM Hazard Modeling</p>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk Score:</span>
@@ -141,7 +137,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.population ? properties.population.toLocaleString() : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Census Model</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -149,7 +144,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.area_sq_km ? `${properties.area_sq_km} km²` : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Projected UTM 44N</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -157,7 +151,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-emerald-700 font-mono">
               {properties.elevation_mean ? `${properties.elevation_mean} m` : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">MSL Datum</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -165,7 +158,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.imperviousness_mean ? `${(properties.imperviousness_mean * 100).toFixed(0)}%` : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Urban Fabric</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -173,7 +165,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-sky-800 font-mono">
               {properties.hand_mean ? `${properties.hand_mean} m` : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Height Above Drain</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -181,7 +172,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.slope_mean ? `${properties.slope_mean}%` : '--'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Mean Topography</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -189,7 +179,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.shelter_count || 4}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Designated Safe Zones</span>
           </div>
 
           <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs">
@@ -197,7 +186,6 @@ export default function WardDetail() {
             <dd className="mt-1 text-lg font-black text-slate-900 font-mono">
               {properties.road_km ? `${properties.road_km} km` : '18.5 km'}
             </dd>
-            <span className="text-[11px] font-medium text-slate-500">Evacuation Arterials</span>
           </div>
         </div>
       </section>

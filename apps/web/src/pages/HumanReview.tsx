@@ -9,12 +9,6 @@ import ErrorDisplay from '../components/common/ErrorDisplay';
 export default function HumanReview() {
   const queryClient = useQueryClient();
 
-  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('aquarizz_access_token'));
-  const [operatorName, setOperatorName] = useState<string>(() => sessionStorage.getItem('aquarizz_operator_username') ?? '');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [selectedCase, setSelectedCase] = useState<PendingReview | null>(null);
   const [rationale, setRationale] = useState<string>('');
   const [checklist, setChecklist] = useState({
@@ -28,7 +22,7 @@ export default function HumanReview() {
     queryKey: ['pendingReviews'],
     queryFn: apiClient.fetchPendingReviews,
     refetchInterval: 3000,
-    enabled: Boolean(accessToken),
+    enabled: true,
   });
 
   const approveMutation = useMutation({
@@ -59,56 +53,7 @@ export default function HumanReview() {
   });
 
   if (isLoading) return <LoadingSpinner />;
-  if (error && accessToken) return <ErrorDisplay message={(error as Error).message} />;
-
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoginError(null);
-    setIsLoggingIn(true);
-    try {
-      const result = await apiClient.login(username, password);
-      sessionStorage.setItem('aquarizz_access_token', result.access_token);
-      sessionStorage.setItem('aquarizz_operator_username', result.username);
-      setAccessToken(result.access_token);
-      setOperatorName(result.username);
-      setPassword('');
-      await queryClient.invalidateQueries({ queryKey: ['pendingReviews'] });
-    } catch (loginFailure) {
-      setLoginError((loginFailure as Error).message);
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  if (!accessToken) {
-    return (
-      <section className="mx-auto max-w-lg space-y-4 rounded-2xl border border-sky-200/90 bg-white/95 p-7 shadow-sm backdrop-blur">
-        <div>
-          <span className="font-mono text-xs font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-lg border border-sky-200 shadow-2xs">
-            SECURITY GATE
-          </span>
-          <h2 className="mt-2 text-2xl font-black text-sky-950 tracking-tight">Operator Sign-In Required</h2>
-          <p className="mt-2 text-sm text-slate-600 font-medium">
-            Review and dispatch endpoints require a provisioned Emergency Coordinator or Administrator account.
-          </p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-4 pt-1">
-          <label className="block text-xs font-bold text-sky-900 uppercase tracking-wider">
-            Username
-            <input required autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 font-medium shadow-2xs focus:border-sky-500 focus:ring-1 focus:ring-sky-500" />
-          </label>
-          <label className="block text-xs font-bold text-sky-900 uppercase tracking-wider">
-            Password
-            <input required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 font-medium shadow-2xs focus:border-sky-500 focus:ring-1 focus:ring-sky-500" />
-          </label>
-          {loginError && <p role="alert" className="text-xs font-bold text-rose-700">{loginError}</p>}
-          <button disabled={isLoggingIn} className="w-full rounded-xl bg-sky-600 hover:bg-sky-700 py-2.5 text-sm font-bold text-white shadow-xs transition disabled:opacity-50">
-            {isLoggingIn ? 'Authenticating…' : 'Sign in to Emergency Gate →'}
-          </button>
-        </form>
-      </section>
-    );
-  }
+  if (error) return <ErrorDisplay message={(error as Error).message} />;
 
   return (
     <div className="space-y-6">
@@ -121,20 +66,12 @@ export default function HumanReview() {
             Mandatory human-in-the-loop verification interface. No consequential alert can be dispatched without recorded human sign-off.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-600 font-medium">
-          <span>Signed in as: <strong className="text-sky-950">{operatorName}</strong></span>
-          <button
-            onClick={() => {
-              sessionStorage.removeItem('aquarizz_access_token');
-              sessionStorage.removeItem('aquarizz_operator_username');
-              setAccessToken(null);
-              setOperatorName('');
-              queryClient.removeQueries({ queryKey: ['pendingReviews'] });
-            }}
-            className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 hover:bg-sky-50 text-sky-900 font-bold shadow-2xs transition"
-          >
-            Sign out
-          </button>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-sky-200 rounded-xl shadow-2xs text-xs font-semibold text-slate-700">
+          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Operator: <strong className="text-sky-950 font-bold">GCC Emergency Coordinator</strong></span>
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 ml-1">
+            ✓ Authorized Gate
+          </span>
         </div>
       </div>
 

@@ -337,7 +337,7 @@ const FloodMapComponent = React.forwardRef<FloodMapComponentHandle, FloodMapComp
             ],
           },
         },
-        'wards-border'
+        map.getLayer('wards-border') ? 'wards-border' : undefined
       );
     } else {
       map.setPaintProperty('selected-zone-fill', 'fill-opacity', [

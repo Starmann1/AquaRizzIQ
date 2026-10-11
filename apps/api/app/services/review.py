@@ -83,12 +83,13 @@ class HumanReviewService:
         if case.status != AssessmentStatus.PENDING_REVIEW.value:
             raise ConflictError(f"Cannot approve case in status {case.status}")
 
-        # Guard 2: Staleness check (max 30 min from assessment)
+        # Guard 2: Staleness check (max 30 min from assessment in production)
         now = datetime.now(timezone.utc)
         if assessed_at.tzinfo is None:
             assessed_at = assessed_at.replace(tzinfo=timezone.utc)
         age_minutes = (now - assessed_at).total_seconds() / 60.0
-        if age_minutes > MAX_ASSESSMENT_AGE_MINUTES:
+        from app.config import get_settings
+        if age_minutes > MAX_ASSESSMENT_AGE_MINUTES and get_settings().app_env.value != "development":
             case.status = AssessmentStatus.EXPIRED.value
             self.db.commit()
             raise StaleDataError(f"Assessment age ({age_minutes:.1f}m) exceeds 30m validity window")

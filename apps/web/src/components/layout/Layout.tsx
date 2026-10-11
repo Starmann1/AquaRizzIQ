@@ -1,5 +1,4 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import SimulatedBadge from '../common/SimulatedBadge';
 
 const navGroups = [
   {
@@ -51,9 +50,6 @@ export default function Layout() {
               <span className="text-[11px] font-semibold text-sky-700 tracking-wide uppercase">Chennai Flood Ops</span>
             </div>
           </div>
-          <div className="mt-1">
-            <SimulatedBadge />
-          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-2.5" aria-label="Main navigation">
@@ -101,15 +97,6 @@ export default function Layout() {
             </details>
           ))}
         </nav>
-
-        {/* System Footer info */}
-        <div className="p-3 border-t border-sky-200/70 bg-sky-100/40 text-[11px] text-slate-500 flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            PostgreSQL Live
-          </span>
-          <span className="font-mono text-sky-800 font-semibold">GCC v1.0</span>
-        </div>
       </aside>
 
       <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/70">

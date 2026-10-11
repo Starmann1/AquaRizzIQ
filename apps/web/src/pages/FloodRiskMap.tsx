@@ -569,12 +569,9 @@ export default function FloodRiskMap() {
 
           {/* EXTERNAL MAP LEGEND & STATUS BAR (Outside the map) */}
           <div className="bg-white/95 rounded-xl border border-sky-200/90 p-4 shadow-sm space-y-3 text-xs text-slate-700 backdrop-blur">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-sky-100 gap-2">
-              <div className="flex items-center gap-2">
-                <span className="font-bold uppercase tracking-wider text-sky-950 text-xs">Map Visual Legend</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-semibold border border-sky-200">Reference Layers</span>
-              </div>
-              <span className="font-mono text-[11px] text-slate-500 font-medium">CRS: EPSG:4326 (WGS 84)</span>
+            <div className="flex items-center gap-2 pb-2 border-b border-sky-100">
+              <span className="font-bold uppercase tracking-wider text-sky-950 text-xs">Map Visual Legend</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-semibold border border-sky-200">Reference Layers</span>
             </div>
 
             {/* Symbols & Color Ramps */}
@@ -631,25 +628,7 @@ export default function FloodRiskMap() {
               </div>
             </div>
 
-            {/* Map Status Notice */}
-            <div className="pt-2 border-t border-sky-100 flex items-start gap-2.5 text-slate-600 text-[11px] leading-relaxed">
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold text-[10px] uppercase tracking-wide border border-emerald-300 shrink-0">
-                PostgreSQL Live
-              </span>
-              <span>
-                Calculated flood risk scores active for all 200 wards: Cyan indicates 2015 historical inundation; emerald points represent TNSMART telemetry stations synced with PostgreSQL.
-              </span>
-            </div>
           </div>
-
-          {/* Layer provenance and coverage details */}
-          <section className="rounded-xl border border-sky-200/90 bg-white/95 p-4 text-xs leading-5 text-slate-600 shadow-sm">
-            <h3 className="mb-2 text-sm font-bold text-sky-950">Layer Provenance & Coverage</h3>
-            <p><strong className="text-slate-800">Administrative boundaries:</strong> GCC divisions, 2022; normalized from KML and served as WGS 84 GeoJSON.</p>
-            <p><strong className="text-slate-800">Zones:</strong> {zones?.zone_features?.length ?? '—'} named GCC zones available as a separate optional outline layer.</p>
-            <p><strong className="text-slate-800">Historical inundation:</strong> NRSC 2015 source; {historicalFloods?.dataset_metadata?.output_feature_count ?? '—'} polygons retained after clipping to GCC extent.</p>
-            <p><strong className="text-slate-800">TN-SMART rainfall:</strong> {rainfall?.dataset_metadata?.station_count_inside_gcc ?? '—'} GCC telemetry stations mapped dynamically.</p>
-          </section>
         </div>
 
         {/* ASIDE PANEL (Right Column): Selected Ward Detail */}
@@ -811,8 +790,8 @@ export default function FloodRiskMap() {
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="mt-6 space-y-2 pt-4 border-t border-sky-200/80">
+          {/* Action button */}
+          <div className="mt-6 pt-4 border-t border-sky-200/80">
             <button
               type="button"
               onClick={() => {
@@ -823,25 +802,6 @@ export default function FloodRiskMap() {
             >
               Open Ward Details &rarr;
             </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setWardModalTab('rca');
-                  setIsWardModalOpen(true);
-                }}
-                className="py-2 px-2 bg-white hover:bg-sky-50 text-slate-700 border border-sky-200 rounded-lg text-xs font-semibold shadow-2xs transition"
-              >
-                View Shapley RCA
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`/routing`)}
-                className="py-2 px-2 bg-white hover:bg-sky-50 text-slate-700 border border-sky-200 rounded-lg text-xs font-semibold shadow-2xs transition"
-              >
-                Plan Evacuation
-              </button>
-            </div>
           </div>
         </aside>
       </div>
