@@ -152,10 +152,37 @@ export default function Audit() {
                         &bull; {rowShort}
                       </div>
                     </td>
-                    <td className="py-3 px-4 max-w-xs truncate font-mono text-[11px] text-slate-600">
-                      {typeof log.details === 'object'
-                        ? JSON.stringify(log.details)
-                        : String(log.details)}
+                    <td className="py-3 px-4 max-w-md text-[11px] text-slate-600">
+                      {typeof log.details === 'object' && log.details !== null ? (
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {log.details.department && (
+                              <span className="bg-sky-100 text-sky-900 px-2 py-0.5 rounded text-[10px] font-bold border border-sky-300">
+                                🏛️ {log.details.department}
+                              </span>
+                            )}
+                            {log.details.action_id && (
+                              <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-amber-300">
+                                {log.details.action_id}
+                              </span>
+                            )}
+                            {log.details.decision && (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                log.details.decision === 'APPROVE'
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                  : 'bg-rose-100 text-rose-900 border-rose-300'
+                              }`}>
+                                {log.details.decision}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-slate-800 font-medium text-xs line-clamp-2">
+                            {log.details.title || log.details.rationale || log.details.notes || log.details.description || JSON.stringify(log.details)}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="font-mono">{String(log.details)}</span>
+                      )}
                     </td>
                   </tr>
                 );

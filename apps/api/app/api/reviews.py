@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -25,6 +25,7 @@ class RejectionPayload(BaseModel):
 
 @router.get("/pending")
 def list_pending_reviews(
+    department: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_role(OPERATOR_ROLES)),
 ):
@@ -38,15 +39,37 @@ def list_pending_reviews(
     results = []
     for c in cases:
         assessment = db.query(Assessment).filter(Assessment.id == c.assessment_id).first()
+        snapshot = assessment.input_snapshot if (assessment and assessment.input_snapshot) else {}
+        action_id = snapshot.get("action_id")
+        action_title = snapshot.get("action_title")
+        action_description = snapshot.get("action_description")
+        dept = snapshot.get("department") or snapshot.get("authority_of_control") or "GCC Emergency Operations"
+        authority = snapshot.get("authority_of_control") or dept
+        urgency = snapshot.get("urgency") or "Immediate (Within 30 mins)"
+        ward_name = snapshot.get("ward_name") or (assessment.ward_id if assessment else "UNKNOWN")
+        zone = snapshot.get("zone") or "Greater Chennai Corporation"
+
+        if department and department != "ALL" and dept != department and authority != department:
+            continue
+
         results.append({
             "case_id": str(c.id),
             "assessment_id": str(c.assessment_id),
             "ward_id": assessment.ward_id if assessment else "UNKNOWN",
+            "ward_name": ward_name,
+            "zone": zone,
             "risk_level": assessment.risk_level if assessment else "HIGH",
             "status": c.status,
             "created_at": c.created_at.isoformat(),
             "expires_at": c.expires_at.isoformat() if c.expires_at else None,
             "content_hash": c.content_hash,
+            "action_id": action_id,
+            "action_title": action_title,
+            "action_description": action_description,
+            "department": dept,
+            "authority_of_control": authority,
+            "urgency": urgency,
+            "priority": snapshot.get("priority") or (assessment.risk_level if assessment else "HIGH"),
         })
     return results
 

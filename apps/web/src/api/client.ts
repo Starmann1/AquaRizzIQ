@@ -25,11 +25,20 @@ export interface PendingReview {
   case_id: string;
   assessment_id: string;
   ward_id: string;
+  ward_name?: string;
+  zone?: string;
   risk_level: string;
   status: string;
   created_at: string;
   expires_at?: string;
   content_hash: string;
+  action_id?: string;
+  action_title?: string;
+  action_description?: string;
+  department?: string;
+  authority_of_control?: string;
+  urgency?: string;
+  priority?: string;
 }
 
 export interface DemoState {
@@ -188,7 +197,12 @@ export const apiClient = {
   fetchExplanation: (assessmentId: string) => fetchApi<any>(`/explanations/${assessmentId}`),
 
   // Reviews & Approval State Machine
-  fetchPendingReviews: () => fetchApi<PendingReview[]>('/reviews/pending'),
+  fetchPendingReviews: (department?: string) =>
+    fetchApi<PendingReview[]>(
+      department && department !== 'ALL'
+        ? `/reviews/pending?department=${encodeURIComponent(department)}`
+        : '/reviews/pending'
+    ),
   approveReview: (caseId: string, rationale: string, checklist: Record<string, boolean>) =>
     fetchApi<any>(`/reviews/${caseId}/approve`, {
       method: 'POST',
@@ -243,6 +257,22 @@ export const apiClient = {
         ? `/recommendations?assessment_id=${encodeURIComponent(assessmentId)}`
         : '/recommendations'
     ),
+  dispatchRecommendation: (payload: {
+    action_id: string;
+    action_title: string;
+    action_description: string;
+    ward_id: string;
+    ward_name?: string;
+    zone?: string;
+    department: string;
+    authority_of_control?: string;
+    priority?: string;
+    urgency?: string;
+  }) =>
+    fetchApi<any>('/recommendations/dispatch', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   // Audit Log & Verification
   fetchAuditLog: () => fetchApi<any[]>('/audit'),

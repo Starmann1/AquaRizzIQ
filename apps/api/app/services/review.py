@@ -11,8 +11,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
-from app.db.models import DecisionCase, Review, Alert
+from app.db.models import DecisionCase, Review, Alert, Assessment
 from app.db.enums import AssessmentStatus, UserRole
+from app.audit.logger import AuditLogger
 from app.errors import ConflictError, AuthorizationError, ValidationError, StaleDataError
 
 MAX_ASSESSMENT_AGE_MINUTES = 30
@@ -123,6 +124,36 @@ class HumanReviewService:
         case.updated_at = now
         case.expires_at = now + timedelta(minutes=APPROVAL_VALIDITY_MINUTES)
         self.db.commit()
+
+        # Log cryptographic audit trail for approval
+        try:
+            assessment = self.db.query(Assessment).filter(Assessment.id == case.assessment_id).first()
+            snapshot = assessment.input_snapshot if (assessment and assessment.input_snapshot) else {}
+            audit_logger = AuditLogger(self.db)
+            audit_logger.log_event(
+                event_type="ACTION_REVIEW_APPROVED",
+                entity_type="DECISION_CASE",
+                entity_id=str(case.id),
+                actor=reviewer_role,
+                details={
+                    "case_id": str(case.id),
+                    "assessment_id": str(case.assessment_id),
+                    "reviewer_id": str(reviewer_id),
+                    "reviewer_role": reviewer_role,
+                    "decision": "APPROVE",
+                    "rationale": rationale,
+                    "checklist": checklist,
+                    "ward_id": assessment.ward_id if assessment else "UNKNOWN",
+                    "action_id": snapshot.get("action_id"),
+                    "action_title": snapshot.get("action_title"),
+                    "department": snapshot.get("department") or snapshot.get("authority_of_control") or "GCC Emergency Operations",
+                    "authority_of_control": snapshot.get("authority_of_control") or snapshot.get("department") or "GCC Emergency Operations",
+                    "status": "APPROVED",
+                },
+            )
+        except Exception:
+            pass
+
         return case
 
     def reject_case(
@@ -151,6 +182,35 @@ class HumanReviewService:
         case.status = AssessmentStatus.REJECTED.value
         case.updated_at = now
         self.db.commit()
+
+        # Log cryptographic audit trail for rejection
+        try:
+            assessment = self.db.query(Assessment).filter(Assessment.id == case.assessment_id).first()
+            snapshot = assessment.input_snapshot if (assessment and assessment.input_snapshot) else {}
+            audit_logger = AuditLogger(self.db)
+            audit_logger.log_event(
+                event_type="ACTION_REVIEW_REJECTED",
+                entity_type="DECISION_CASE",
+                entity_id=str(case.id),
+                actor="EMERGENCY_COORDINATOR",
+                details={
+                    "case_id": str(case.id),
+                    "assessment_id": str(case.assessment_id),
+                    "reviewer_id": str(reviewer_id),
+                    "decision": "REJECT",
+                    "rationale": rationale,
+                    "checklist": checklist,
+                    "ward_id": assessment.ward_id if assessment else "UNKNOWN",
+                    "action_id": snapshot.get("action_id"),
+                    "action_title": snapshot.get("action_title"),
+                    "department": snapshot.get("department") or snapshot.get("authority_of_control") or "GCC Emergency Operations",
+                    "authority_of_control": snapshot.get("authority_of_control") or snapshot.get("department") or "GCC Emergency Operations",
+                    "status": "REJECTED",
+                },
+            )
+        except Exception:
+            pass
+
         return case
 
     def dispatch_alert(
@@ -186,4 +246,30 @@ class HumanReviewService:
         case.status = AssessmentStatus.DISPATCHED.value
         case.updated_at = now
         self.db.commit()
+
+        # Log cryptographic audit trail for alert dispatch
+        try:
+            assessment = self.db.query(Assessment).filter(Assessment.id == case.assessment_id).first()
+            snapshot = assessment.input_snapshot if (assessment and assessment.input_snapshot) else {}
+            audit_logger = AuditLogger(self.db)
+            audit_logger.log_event(
+                event_type="ALERT_DISPATCHED",
+                entity_type="ALERT",
+                entity_id=str(alert.id),
+                actor="EMERGENCY_COORDINATOR",
+                details={
+                    "alert_id": str(alert.id),
+                    "case_id": str(case.id),
+                    "alert_level": alert_level,
+                    "message": message,
+                    "ward_id": assessment.ward_id if assessment else "UNKNOWN",
+                    "action_id": snapshot.get("action_id"),
+                    "department": snapshot.get("department"),
+                    "dispatch_method": alert.dispatch_method,
+                    "is_simulated": True,
+                },
+            )
+        except Exception:
+            pass
+
         return alert

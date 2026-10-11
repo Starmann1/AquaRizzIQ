@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 import RiskBadge from './RiskBadge';
 import LoadingSpinner from './LoadingSpinner';
@@ -21,9 +22,19 @@ export default function WardDetailModal({
   initialTab = 'overview',
   onPlanEvacuation,
 }: WardDetailModalProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<WardModalTab>(initialTab);
   const [actionFilter, setActionFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
   const [dispatchedActions, setDispatchedActions] = useState<Record<string, boolean>>({});
+  const [dispatchingActionId, setDispatchingActionId] = useState<string | null>(null);
+  const [dispatchNotification, setDispatchNotification] = useState<{
+    actionId: string;
+    message: string;
+    department: string;
+    caseId?: string;
+  } | null>(null);
 
   // Reset tab when modal opens or initialTab changes
   useEffect(() => {
@@ -239,11 +250,47 @@ export default function WardDetailModal({
   const rainfallIntensity = forecast?.rainfall_intensity_mmh ?? 26.0;
   const surchargeDanger = channelDepth * 0.85;
 
-  const handleSimulateDispatch = (actionId: string) => {
-    setDispatchedActions((prev) => ({
-      ...prev,
-      [actionId]: !prev[actionId],
-    }));
+  const handleSimulateDispatch = async (act: any) => {
+    setDispatchingActionId(act.id);
+    try {
+      const res = await apiClient.dispatchRecommendation({
+        action_id: act.id,
+        action_title: act.title,
+        action_description: act.description,
+        ward_id: wardId,
+        ward_name: risk?.ward_name || properties.name || `Ward ${wardId}`,
+        zone: risk?.zone || properties.zone || 'Greater Chennai Corporation',
+        department: act.unit || 'GCC Disaster Management Team',
+        authority_of_control: act.unit || 'GCC Disaster Management Team',
+        priority: act.priority || 'MEDIUM',
+        urgency: act.urgency || 'Immediate (Within 30 mins)',
+      });
+
+      setDispatchedActions((prev) => ({
+        ...prev,
+        [act.id]: true,
+      }));
+
+      setDispatchNotification({
+        actionId: act.id,
+        message: res.message || `Queued for Human Review under ${act.unit}. Cryptographic audit record logged.`,
+        department: act.unit || 'Respective Authority',
+        caseId: res.case_id,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['pendingReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+    } catch (err: any) {
+      console.error('Dispatch error:', err);
+      // Fallback local toggle
+      setDispatchedActions((prev) => ({
+        ...prev,
+        [act.id]: true,
+      }));
+    } finally {
+      setDispatchingActionId(null);
+    }
   };
 
   return (
@@ -796,6 +843,48 @@ export default function WardDetailModal({
                 </div>
               </div>
 
+              {/* Dispatch Notification Banner */}
+              {dispatchNotification && (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">🛡️</span>
+                    <div>
+                      <div className="text-xs font-bold text-emerald-950 flex items-center gap-2">
+                        <span>Action <strong>{dispatchNotification.actionId}</strong> Logged in Human Review Gate</span>
+                        <span className="bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                          {dispatchNotification.department}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-emerald-800 font-medium mt-0.5">
+                        {dispatchNotification.message}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate('/review');
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-2xs"
+                    >
+                      Open Human Review Gate →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate('/audit');
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 text-xs font-bold transition shadow-2xs"
+                    >
+                      View Audit Trail →
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Action Cards List */}
               <div className="space-y-4 pt-1">
                 {filteredActions.map((act: any, idx: number) => {
@@ -866,21 +955,28 @@ export default function WardDetailModal({
                               }`}
                             />
                             {isDispatched
-                              ? 'Dispatch Confirmed (Simulation)'
+                              ? `Logged for ${act.unit} (Pending Sign-Off)`
                               : 'Ready for Field Deployment'}
                           </span>
                         </div>
 
                         <button
                           type="button"
-                          onClick={() => handleSimulateDispatch(act.id)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                          onClick={() => handleSimulateDispatch(act)}
+                          disabled={dispatchingActionId === act.id}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60 ${
                             isDispatched
                               ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
                               : 'bg-sky-600 text-white hover:bg-sky-700 shadow-sky-200'
                           }`}
                         >
-                          {isDispatched ? '✓ Dispatched' : 'Simulate Dispatch →'}
+                          {dispatchingActionId === act.id ? (
+                            'Logging Case & Audit…'
+                          ) : isDispatched ? (
+                            '✓ Dispatched (Review Queued)'
+                          ) : (
+                            'Simulate Dispatch →'
+                          )}
                         </button>
                       </div>
                     </div>

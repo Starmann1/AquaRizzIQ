@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, WardRisk } from '../api/client';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
@@ -226,10 +226,61 @@ const generateActionsForWard = (ward: WardRisk): ActionItem[] => {
 
 export default function Recommendation() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [selectedZone, setSelectedZone] = useState<string>('ALL');
   const [selectedWardId, setSelectedWardId] = useState<string>('ALL');
   const [filterPriority, setFilterPriority] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'feed' | 'zones'>('feed');
+
+  const [dispatchedRecs, setDispatchedRecs] = useState<Record<string, boolean>>({});
+  const [dispatchingRecId, setDispatchingRecId] = useState<string | null>(null);
+  const [recBanner, setRecBanner] = useState<{
+    actionId: string;
+    message: string;
+    department: string;
+  } | null>(null);
+
+  const getDepartmentForRec = (rec: ActionItem) => {
+    const t = rec.type.toLowerCase();
+    if (t.includes('pump') || t.includes('dewater')) return 'GCC Stormwater Drains Team';
+    if (t.includes('sluice') || t.includes('gate') || t.includes('drain') || t.includes('culvert')) return 'Water Resources Dept (WRD)';
+    if (t.includes('boat') || t.includes('rescue')) return 'Disaster Rescue & Fire Force';
+    if (t.includes('shelter') || t.includes('relief')) return 'GCC Disaster Management Team';
+    return 'GCC Emergency Control Room';
+  };
+
+  const handleDispatchRec = async (rec: ActionItem) => {
+    setDispatchingRecId(rec.id);
+    const dept = getDepartmentForRec(rec);
+    try {
+      const res = await apiClient.dispatchRecommendation({
+        action_id: rec.id,
+        action_title: rec.type,
+        action_description: rec.description,
+        ward_id: rec.ward_id,
+        ward_name: rec.ward_name,
+        zone: rec.zone,
+        department: dept,
+        authority_of_control: dept,
+        priority: rec.priority,
+        urgency: rec.priority === 'HIGH' ? 'Immediate (Within 30 mins)' : rec.priority === 'MEDIUM' ? 'Within 2–4 Hours' : 'Standard Precaution',
+      });
+      setDispatchedRecs((prev) => ({ ...prev, [rec.id]: true }));
+      setRecBanner({
+        actionId: rec.id,
+        message: res.message || `Action ${rec.id} queued in Human Review for ${dept}. Audit trail recorded.`,
+        department: dept,
+      });
+      queryClient.invalidateQueries({ queryKey: ['pendingReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+    } catch (err: any) {
+      console.error('Dispatch error:', err);
+      setDispatchedRecs((prev) => ({ ...prev, [rec.id]: true }));
+    } finally {
+      setDispatchingRecId(null);
+    }
+  };
 
   const { data: recommendations, isLoading: recsLoading, error: recsError } = useQuery({
     queryKey: ['recommendations'],
@@ -664,12 +715,52 @@ export default function Recommendation() {
             </div>
           </section>
 
+          {/* Dispatch Notification Banner */}
+          {recBanner && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🛡️</span>
+                <div>
+                  <div className="text-xs font-bold text-emerald-950 flex items-center gap-2">
+                    <span>Action <strong>{recBanner.actionId}</strong> Logged in Human Review Gate</span>
+                    <span className="bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                      {recBanner.department}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-800 font-medium mt-0.5">
+                    {recBanner.message}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/review')}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-2xs"
+                >
+                  Open Human Review Gate →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/audit')}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 text-xs font-bold transition shadow-2xs"
+                >
+                  View Audit Trail →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Single Actions Feed */}
           <section className="space-y-3">
             {displayActions.length > 0 ? (
               displayActions.map((rec, idx) => {
                 const isHigh = rec.priority === 'HIGH';
                 const isMed = rec.priority === 'MEDIUM';
+                const dept = getDepartmentForRec(rec);
+                const isDispatched = !!dispatchedRecs[rec.id];
+                const isDispatching = dispatchingRecId === rec.id;
+
                 return (
                   <div
                     key={rec.id || idx}
@@ -694,11 +785,16 @@ export default function Recommendation() {
                         </span>
                       </div>
 
-                      {rec.ward_id && (
-                        <span className="rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-mono font-bold text-sky-900 border border-sky-200 shadow-2xs">
-                          {rec.ward_name} ({rec.zone})
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-sky-950 bg-sky-100/70 px-2.5 py-0.5 rounded-lg border border-sky-200/80">
+                          🏛️ {dept}
                         </span>
-                      )}
+                        {rec.ward_id && (
+                          <span className="rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-mono font-bold text-sky-900 border border-sky-200 shadow-2xs">
+                            {rec.ward_name} ({rec.zone})
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Title & Description */}
@@ -719,13 +815,26 @@ export default function Recommendation() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                          Requires Human Signoff
-                        </span>
+                      <div className="flex flex-wrap items-center gap-2.5">
                         <button
                           type="button"
-                          className="rounded-xl bg-sky-600 hover:bg-sky-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition"
+                          onClick={() => handleDispatchRec(rec)}
+                          disabled={isDispatching}
+                          className={`rounded-xl px-4 py-2 text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60 ${
+                            isDispatched
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                              : 'bg-sky-600 text-white hover:bg-sky-700'
+                          }`}
+                        >
+                          {isDispatching
+                            ? 'Logging Case & Audit…'
+                            : isDispatched
+                            ? `✓ Logged for ${dept}`
+                            : 'Simulate Dispatch →'}
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-4 py-2 text-xs font-bold transition shadow-2xs"
                           onClick={() => navigate('/review')}
                         >
                           Review in Emergency Gate →
