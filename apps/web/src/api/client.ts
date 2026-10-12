@@ -135,6 +135,85 @@ export interface RouteResult {
   message?: string;
 }
 
+export interface RoutingNode {
+  id: string;
+  name: string;
+  pos: [number, number];
+  sector: string;
+  zone: string;
+  is_shelter: boolean;
+  vulnerability?: number;
+  est_evacuees?: number;
+}
+
+export interface RoutingShelter {
+  id: string;
+  name: string;
+  pos: [number, number];
+  sector: string;
+  zone: string;
+  is_shelter: true;
+  safety: number;
+  capacity: number;
+}
+
+export interface RoutingNetwork {
+  sectors: string[];
+  origins: RoutingNode[];
+  shelters: RoutingShelter[];
+  edges: Array<{
+    u: string;
+    v: string;
+    length_m: number;
+    base_risk: number;
+    is_underpass: boolean;
+    name: string;
+  }>;
+  chokepoints: Array<{
+    id: string;
+    edge: [string, string];
+    name: string;
+  }>;
+}
+
+export interface EvacuationCorridor {
+  origin_id: string;
+  origin_name: string;
+  origin_sector: string;
+  target_shelter_id: string;
+  target_shelter_name: string;
+  evacuees_assigned: number;
+  distance_km: number;
+  duration_min: number;
+  srs_score: number;
+  route_nodes: string[];
+}
+
+export interface ShelterReport {
+  shelter_id: string;
+  shelter_name: string;
+  sector: string;
+  capacity: number;
+  evacuees_allocated: number;
+  occupancy_rate: number;
+  safety_rating: number;
+}
+
+export interface CityWidePlanResult {
+  status: string;
+  is_simulated: boolean;
+  sector: string;
+  total_evacuation_corridors: number;
+  total_evacuees_safeguarded: number;
+  avg_route_safety_score: number;
+  avg_evacuation_distance_km: number;
+  avg_evacuation_duration_min: number;
+  corridors: EvacuationCorridor[];
+  shelters: ShelterReport[];
+  prototype_only: boolean;
+  network_basis: string;
+}
+
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const accessToken = sessionStorage.getItem('aquarizz_access_token');
   const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -223,12 +302,21 @@ export const apiClient = {
     }),
 
   // Routing
+  fetchRoutingNetwork: () => fetchApi<RoutingNetwork>('/routes/network'),
   calculateRoute: (origin: string, destination: string, overlay?: Record<string, number>) =>
     fetchApi<RouteResult>('/routes', {
       method: 'POST',
       body: JSON.stringify({
         origin_node: origin,
         destination_node: destination,
+        flood_penalty_overlay: overlay,
+      }),
+    }),
+  simulateCityWidePlan: (sector?: string, overlay?: Record<string, number>) =>
+    fetchApi<CityWidePlanResult>('/routes/citywide-plan', {
+      method: 'POST',
+      body: JSON.stringify({
+        sector: sector || 'All Chennai',
         flood_penalty_overlay: overlay,
       }),
     }),

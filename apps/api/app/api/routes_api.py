@@ -29,10 +29,22 @@ class RouteRequest(BaseModel):
         return overlay
 
 
+class CityWidePlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sector: Optional[str] = "All Chennai"
+    flood_penalty_overlay: Optional[dict[str, float]] = None
+
+
+@router.get("/network")
+def get_evacuation_network():
+    """Return all Chennai-wide evacuation origins, relief camps, shelter zones, and road edges."""
+    return planner.get_network()
+
+
 @router.post("")
 def calculate_route(payload: RouteRequest):
     """Calculate a path in the prototype graph; this is not evacuation guidance."""
-    # Convert overlay if provided
     overlay = {}
     if payload.flood_penalty_overlay:
         for k, v in payload.flood_penalty_overlay.items():
@@ -59,4 +71,26 @@ def calculate_route(payload: RouteRequest):
             "Road geometry, travel times, hazard values, and destination availability are illustrative fixtures.",
             "This result is not a safe-route determination and must not guide evacuation.",
         ],
+    }
+
+
+@router.post("/citywide-plan")
+def simulate_citywide_plan(payload: CityWidePlanRequest):
+    """Simulate optimal evacuation plan from all vulnerable Chennai hubs to designated relief camps."""
+    overlay = {}
+    if payload.flood_penalty_overlay:
+        for k, v in payload.flood_penalty_overlay.items():
+            if ":" in k:
+                u, w = k.split(":")
+                overlay[(u, w)] = v
+
+    plan = planner.simulate_citywide_evacuation(
+        hazard_risk_overlay=overlay,
+        sector_filter=payload.sector,
+    )
+
+    return {
+        **plan,
+        "prototype_only": True,
+        "network_basis": "GREATER_CHENNAI_CALIBRATED_GRAPH",
     }
