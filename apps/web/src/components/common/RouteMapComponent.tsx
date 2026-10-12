@@ -56,7 +56,7 @@ export const ROUTE_NODES: Record<string, RouteNodePos> = {
   SH_SHOLINGANALLUR: { pos: [80.228, 12.872], name: 'Sathyabama Disaster Complex', sector: 'South Chennai', zone: 'Sholinganallur', is_shelter: true, safety: 0.95, capacity: 4500 },
 };
 
-export const ROAD_EDGES: [string, string][] = [
+const ROAD_EDGES: [string, string][] = [
   // Original Canonical Edges
   ['N_TNAGAR_CENTER', 'SH_TNAGAR'],
   ['N_TNAGAR_CENTER', 'N_USMAN_RD'],
