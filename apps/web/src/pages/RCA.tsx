@@ -166,6 +166,15 @@ export default function RCA() {
     return map[name] || name.replace(/_/g, ' ');
   };
 
+  const formatFactorValue = (name: string, val: any) => {
+    if (typeof val !== 'number') return val ?? '—';
+    if (name === 'water_level_m') return `${val.toFixed(2)} m`;
+    if (name === 'rainfall_1h' || name === 'rainfall_3h') return `${val.toFixed(1)} mm`;
+    if (name === 'rate_of_rise') return `${val.toFixed(3)} m/min`;
+    if (name === 'static_susceptibility') return val.toFixed(2);
+    return val.toFixed(2);
+  };
+
   return (
     <main className="mx-auto max-w-6xl space-y-6 pb-12">
       {/* Page Header & Controls */}
@@ -497,7 +506,7 @@ export default function RCA() {
                                   {getFriendlyFactorName(f.factor_name)}
                                 </td>
                                 <td className="px-3 py-2.5 font-mono text-xs text-slate-800">
-                                  {typeof f.observed_value === 'number' ? f.observed_value.toFixed(2) : f.observed_value}
+                                  {formatFactorValue(f.factor_name, f.observed_value)}
                                 </td>
                                 <td className="px-3 py-2.5 font-mono font-bold text-xs">
                                   <span className={isPositive ? 'text-rose-600' : 'text-emerald-600'}>
@@ -598,7 +607,7 @@ export default function RCA() {
                                   {getFriendlyFactorName(f.factor_name)}
                                 </td>
                                 <td className="px-3 py-2.5 font-mono text-xs text-slate-800">
-                                  {typeof f.observed_value === 'number' ? f.observed_value.toFixed(2) : f.observed_value}
+                                  {formatFactorValue(f.factor_name, f.observed_value)}
                                 </td>
                                 <td className="px-3 py-2.5 font-mono font-bold text-xs">
                                   <span className={isPositive ? 'text-rose-600' : 'text-emerald-600'}>
@@ -707,10 +716,10 @@ export default function RCA() {
                               {getFriendlyFactorName(f.factor_name)}
                             </td>
                             <td className="px-4 py-3 font-mono font-medium text-slate-800">
-                              {typeof f.observed_value === 'number' ? f.observed_value.toFixed(2) : f.observed_value}
+                              {formatFactorValue(f.factor_name, f.observed_value)}
                             </td>
                             <td className="px-4 py-3 font-mono text-slate-500">
-                              {typeof f.baseline_value === 'number' ? f.baseline_value.toFixed(2) : f.baseline_value}
+                              {formatFactorValue(f.factor_name, f.baseline_value)}
                             </td>
                             <td className="px-4 py-3 font-mono font-bold">
                               <span className={isPositive ? 'text-rose-600' : 'text-emerald-600'}>
