@@ -18,7 +18,7 @@ export default function AlertSimulation() {
 
   const { data: pendingCases } = useQuery({
     queryKey: ['pendingReviews'],
-    queryFn: apiClient.fetchPendingReviews,
+    queryFn: () => apiClient.fetchPendingReviews(),
   });
 
   const dispatchMutation = useMutation({

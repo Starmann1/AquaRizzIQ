@@ -242,35 +242,80 @@ const FloodMapComponent = React.forwardRef<FloodMapComponentHandle, FloodMapComp
         const feature = e.features[0];
         const properties = feature.properties ?? {};
         const wid = properties.ward_id;
+
         const content = document.createElement('div');
-        content.className = 'space-y-1 text-slate-900';
-        const title = document.createElement('strong');
-        title.textContent = `${String(properties.name ?? 'GCC division')} · ${String(wid ?? '')}`;
-        content.appendChild(title);
-        const zone = document.createElement('p');
-        zone.textContent = `Zone: ${String(properties.zone ?? 'unresolved')}`;
-        content.appendChild(zone);
-        const area = document.createElement('p');
-        area.textContent = `Boundary area: ${properties.area_sq_km == null ? 'unavailable' : `${properties.area_sq_km} km² (derived)`}`;
-        content.appendChild(area);
-        const floodCount = document.createElement('p');
-        floodCount.textContent = `2015 NRSC polygons intersecting: ${String(properties.historical_flood_feature_count ?? 'unavailable')}`;
-        content.appendChild(floodCount);
-        const stationCount = document.createElement('p');
-        stationCount.textContent = `Dated TN-SMART stations in division: ${String(properties.rainfall_station_count ?? 'unavailable')}`;
-        content.appendChild(stationCount);
-        if (properties.risk_level) {
-          const riskInfo = document.createElement('p');
-          const scorePercent = typeof properties.risk_score === 'number' ? (properties.risk_score * 100).toFixed(1) : null;
-          riskInfo.className = 'font-semibold text-slate-800';
-          riskInfo.textContent = `Flood Risk: ${properties.risk_level}${scorePercent ? ` (${scorePercent}%)` : ''}`;
-          content.appendChild(riskInfo);
+        content.className = 'p-1 min-w-[190px] text-slate-800 font-sans';
+
+        // Header with Division Name, ID, and Risk Badge
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2';
+
+        const nameContainer = document.createElement('div');
+        const nameEl = document.createElement('h4');
+        nameEl.className = 'text-sm font-bold text-slate-900 leading-tight';
+        nameEl.textContent = String(properties.name ?? 'GCC Division');
+
+        const widEl = document.createElement('span');
+        widEl.className = 'text-[11px] font-mono text-slate-500 font-medium';
+        widEl.textContent = String(wid ?? '');
+
+        nameContainer.appendChild(nameEl);
+        nameContainer.appendChild(widEl);
+        header.appendChild(nameContainer);
+
+        const riskLevel = properties.risk_level || 'LOW';
+        const badge = document.createElement('span');
+        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+        if (riskLevel === 'VERY_HIGH' || riskLevel === 'CRITICAL') {
+          badgeColor = 'bg-rose-100 text-rose-800 border-rose-300';
+        } else if (riskLevel === 'HIGH') {
+          badgeColor = 'bg-orange-100 text-orange-800 border-orange-300';
+        } else if (riskLevel === 'MEDIUM') {
+          badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
+        } else if (riskLevel === 'LOW') {
+          badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
         }
-        const liveStatus = document.createElement('p');
-        liveStatus.className = 'text-[11px] text-emerald-700 font-semibold';
-        liveStatus.textContent = '✓ Live risk calculated from PostgreSQL telemetry.';
-        content.appendChild(liveStatus);
-        new maplibregl.Popup({ closeButton: true, maxWidth: '300px' })
+        badge.className = `px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border ${badgeColor}`;
+        badge.textContent = riskLevel.replace('_', ' ');
+        header.appendChild(badge);
+        content.appendChild(header);
+
+        // Body: Zone & Risk Score
+        const details = document.createElement('div');
+        details.className = 'space-y-1.5 text-xs';
+
+        const zoneRow = document.createElement('div');
+        zoneRow.className = 'flex items-center justify-between text-slate-600';
+        const zoneLabel = document.createElement('span');
+        zoneLabel.className = 'text-slate-500';
+        zoneLabel.textContent = 'Zone';
+        const zoneVal = document.createElement('span');
+        zoneVal.className = 'font-semibold text-slate-800 text-right';
+        zoneVal.textContent = String(properties.zone ?? 'Greater Chennai');
+        zoneRow.appendChild(zoneLabel);
+        zoneRow.appendChild(zoneVal);
+        details.appendChild(zoneRow);
+
+        const scorePercent = typeof properties.risk_score === 'number'
+          ? (properties.risk_score * 100).toFixed(1)
+          : null;
+        if (scorePercent) {
+          const scoreRow = document.createElement('div');
+          scoreRow.className = 'flex items-center justify-between text-slate-600';
+          const scoreLabel = document.createElement('span');
+          scoreLabel.className = 'text-slate-500';
+          scoreLabel.textContent = 'Risk Score';
+          const scoreVal = document.createElement('span');
+          scoreVal.className = 'font-bold font-mono text-slate-900';
+          scoreVal.textContent = `${scorePercent}%`;
+          scoreRow.appendChild(scoreLabel);
+          scoreRow.appendChild(scoreVal);
+          details.appendChild(scoreRow);
+        }
+
+        content.appendChild(details);
+
+        new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
           .setLngLat(e.lngLat)
           .setDOMContent(content)
           .addTo(map);
