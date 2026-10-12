@@ -558,6 +558,72 @@ export default function Forecast() {
                 );
               })}
             </div>
+
+            {/* Visual Rise Progression & Channel Capacity Summary Bar */}
+            <section className="rounded-xl border border-sky-100 bg-sky-50/40 p-4 text-xs text-slate-600 space-y-2 mt-5">
+              <div className="flex justify-between font-semibold text-sky-950">
+                <span>Channel Water Level & Capacity Summary</span>
+                <span>Safety Buffer Before Overflow: {Math.max(0, dangerLevel - currentLevel).toFixed(2)} m</span>
+              </div>
+              <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden flex">
+                <div
+                  className="bg-sky-500 h-full transition-all"
+                  style={{ width: `${Math.min(100, (currentLevel / channelDepth) * 100)}%` }}
+                  title={`Current Level: ${currentLevel.toFixed(2)}m`}
+                />
+                <div
+                  className="bg-amber-400 h-full opacity-60 transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100 - (currentLevel / channelDepth) * 100,
+                      Math.max(0, ((horizons.plus_120m?.p50 ?? currentLevel) - currentLevel) / channelDepth) * 100
+                    )}%`,
+                  }}
+                  title={`+120m Projection: ${horizons.plus_120m?.p50 ?? currentLevel}m`}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-500 pt-0.5">
+                <span>0.0 m (Channel Bed)</span>
+                <span className="text-rose-700 font-bold">{dangerLevel.toFixed(2)}m (Danger Threshold)</span>
+                <span>{channelDepth.toFixed(1)} m (Maximum Channel Capacity)</span>
+              </div>
+
+              {/* Side-by-side / Secondary Ward comparison capacity bar if comparison is active */}
+              {isCompareOpen && (
+                <div className="pt-3 mt-3 border-t border-amber-200/60 space-y-2">
+                  <div className="flex justify-between font-semibold text-amber-950">
+                    <span>
+                      Comparison Capacity: {compareWard?.ward_name || compareWardId}
+                    </span>
+                    <span>
+                      Safety Buffer: {Math.max(0, compareDanger - compareLevel).toFixed(2)} m
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden flex">
+                    <div
+                      className="bg-amber-500 h-full transition-all"
+                      style={{ width: `${Math.min(100, (compareLevel / compareDepth) * 100)}%` }}
+                      title={`Current Level: ${compareLevel.toFixed(2)}m`}
+                    />
+                    <div
+                      className="bg-rose-400 h-full opacity-60 transition-all"
+                      style={{
+                        width: `${Math.min(
+                          100 - (compareLevel / compareDepth) * 100,
+                          Math.max(0, ((compareHorizons.plus_120m?.p50 ?? compareLevel) - compareLevel) / compareDepth) * 100
+                        )}%`,
+                      }}
+                      title={`+120m Projection: ${compareHorizons.plus_120m?.p50 ?? compareLevel}m`}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 pt-0.5">
+                    <span>0.0 m (Channel Bed)</span>
+                    <span className="text-rose-700 font-bold">{compareDanger.toFixed(2)}m (Danger Threshold)</span>
+                    <span>{compareDepth.toFixed(1)} m (Maximum Channel Capacity)</span>
+                  </div>
+                </div>
+              )}
+            </section>
           </section>
         </>
       )}

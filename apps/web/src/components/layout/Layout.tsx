@@ -28,7 +28,6 @@ const navGroups = [
     name: 'Governance & Response',
     paths: [
       { name: 'Human Review Gate', path: '/review' },
-      { name: 'Alert Gateway', path: '/alerts' },
     ],
   },
 ];

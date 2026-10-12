@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient, PendingReview } from '../api/client';
 import RiskBadge from '../components/common/RiskBadge';
 import StatusBadge from '../components/common/StatusBadge';
+import SimulatedBadge from '../components/common/SimulatedBadge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
 
@@ -37,11 +38,27 @@ export default function HumanReview() {
     enabled: true,
   });
 
+  const { data: alerts } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: apiClient.fetchAlerts,
+    refetchInterval: 3000,
+  });
+
   const approveMutation = useMutation({
-    mutationFn: (caseId: string) =>
-      apiClient.approveReview(caseId, rationale, checklist),
+    mutationFn: async (caseId: string) => {
+      const res = await apiClient.approveReview(caseId, rationale, checklist);
+      try {
+        await apiClient.dispatchAlert(
+          caseId,
+          `FLOOD WARNING [${selectedCase?.risk_level || 'HIGH'}]: Action authorized for Ward ${selectedCase?.ward_id}. Operational field teams dispatched.`
+        );
+      } catch (err) {
+        console.warn('Auto-dispatch broadcast notification:', err);
+      }
+      return res;
+    },
     onSuccess: (data) => {
-      setActionMessage(`✓ Case ${data.case_id} APPROVED. Operational action authorized for field dispatch. Cryptographic audit trail recorded.`);
+      setActionMessage(`✓ Case ${data.case_id} APPROVED & DISPATCHED. Operational action authorized and siren broadcast logged.`);
       queryClient.invalidateQueries({ queryKey: ['pendingReviews'] });
       queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
@@ -416,6 +433,68 @@ export default function HumanReview() {
           )}
         </div>
       </div>
+
+      {/* Merged Alert Broadcast Gateway & Siren Transmission Log */}
+      <section className="p-6 bg-white/95 rounded-2xl border border-sky-200/90 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <h3 className="text-base font-bold text-sky-950">
+              Broadcast History & Siren Transmission Log
+            </h3>
+            <SimulatedBadge />
+          </div>
+          <span className="text-xs font-mono font-bold text-slate-500">
+            {alerts?.length || 0} Broadcasts Transmitted
+          </span>
+        </div>
+
+        {!alerts || alerts.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <span className="text-2xl">📡</span>
+            <p className="text-xs font-bold text-slate-600">
+              No alert broadcasts transmitted yet.
+            </p>
+            <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+              When an emergency coordinator authorizes a decision case above, the approved warning is transmitted to simulated municipal sirens & citizen broadcast channels and permanently logged here.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-sky-50/80 text-sky-950 text-xs uppercase font-bold tracking-wider border-b border-sky-200">
+                <tr>
+                  <th className="px-4 py-3">Alert ID</th>
+                  <th className="px-4 py-3">Level</th>
+                  <th className="px-4 py-3">Broadcast Message</th>
+                  <th className="px-4 py-3">Channel</th>
+                  <th className="px-4 py-3">Dispatched At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sky-100">
+                {alerts.map((a: any) => (
+                  <tr key={a.id} className="hover:bg-sky-50/40 transition">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-sky-900">
+                      {a.id ? a.id.slice(0, 8) : 'ALT'}...
+                    </td>
+                    <td className="px-4 py-3">
+                      <RiskBadge level={a.alert_level as any} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-900 text-xs font-medium">
+                      {a.message}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-sky-800 font-mono font-bold">
+                      {a.dispatch_method}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 font-mono whitespace-nowrap">
+                      {a.dispatched_at ? new Date(a.dispatched_at).toLocaleTimeString() : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

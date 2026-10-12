@@ -13,7 +13,6 @@ const Routing = lazy(() => import('./pages/Routing'));
 const Audit = lazy(() => import('./pages/Audit'));
 const DataModelQuality = lazy(() => import('./pages/DataModelQuality'));
 const HumanReview = lazy(() => import('./pages/HumanReview'));
-const AlertSimulation = lazy(() => import('./pages/AlertSimulation'));
 
 export default function App() {
   return (
@@ -29,7 +28,7 @@ export default function App() {
         <Route path="recommendations" element={<Suspense fallback={<PageLoading />}><Recommendation /></Suspense>} />
         <Route path="routing" element={<Suspense fallback={<PageLoading />}><Routing /></Suspense>} />
         <Route path="review" element={<Suspense fallback={<PageLoading />}><HumanReview /></Suspense>} />
-        <Route path="alerts" element={<Suspense fallback={<PageLoading />}><AlertSimulation /></Suspense>} />
+        <Route path="alerts" element={<Navigate to="/review" replace />} />
         <Route path="audit" element={<Suspense fallback={<PageLoading />}><Audit /></Suspense>} />
         <Route path="quality" element={<Suspense fallback={<PageLoading />}><DataModelQuality /></Suspense>} />
         <Route path="*" element={<Navigate to="/overview" replace />} />
